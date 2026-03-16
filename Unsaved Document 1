@@ -1,0 +1,19 @@
+support for tagging mesh for building bbox for collision so users cant zoom into buildings
+auto tag hostpots from hotspot mesh in glb
+responsive design for mobile
+web hosting and as app on mobile and desktop
+real-time sync with tour data for all types of deployment
+add tour support for panoramas with navigation hotspots
+loading performance improvement
+tour intro
+
+image for hotspots
+unit search to centre
+panorama thumbnail
+show only one 3d floor plan no need for next and previous also add loading
+no rotate in imaage viewer
+
+clouds
+default camera
+gaussian
+effects

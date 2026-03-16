@@ -1,0 +1,3778 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>3D Tour</title>
+        <style>
+            :root {
+                --c-pri: #7cb342;
+                --c-pri-dk: #5a8a2a;
+                --c-pri-lt: #aed581;
+                --c-pri-a: rgba(124, 179, 66, 0.15);
+                --c-ok: #22c55e;
+                --c-warn: #f59e0b;
+                --c-err: #ef4444;
+                --c-bg: #f4f5f7;
+                --c-card: #fff;
+                --c-card2: #f9fafb;
+                --c-inp: #fff;
+                --c-t1: #1a1a2e;
+                --c-t2: #555570;
+                --c-t3: #8888a0;
+                --c-b1: rgba(0, 0, 0, 0.08);
+                --c-b2: rgba(0, 0, 0, 0.14);
+                --r-s: 6px;
+                --r-m: 10px;
+                --r-l: 14px;
+                --r-xl: 18px;
+                --sh-s: 0 1px 4px rgba(0, 0, 0, 0.07);
+                --sh-m: 0 4px 14px rgba(0, 0, 0, 0.1);
+                --sh-l: 0 8px 28px rgba(0, 0, 0, 0.13);
+                --t1: 0.18s ease;
+                --t2: 0.28s ease;
+                --t3: 0.4s ease;
+            }
+            [data-theme="dark"] {
+                --c-bg: #16162a;
+                --c-card: #222240;
+                --c-card2: #282848;
+                --c-inp: #2c2c4c;
+                --c-t1: #e4e4f0;
+                --c-t2: #a8a8c4;
+                --c-t3: #6e6e94;
+                --c-b1: rgba(255, 255, 255, 0.07);
+                --c-b2: rgba(255, 255, 255, 0.13);
+            }
+            *,
+            *::before,
+            *::after {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    Helvetica, Arial, sans-serif;
+                background: #0d1117;
+                color: var(--c-t1);
+                overflow: hidden;
+                -webkit-font-smoothing: antialiased;
+            }
+            button {
+                font-family: inherit;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+            @keyframes scaleIn {
+                from {
+                    opacity: 0;
+                    transform: scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+            }
+            @keyframes slideUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(12px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+            @keyframes bob {
+                0%,
+                100% {
+                    transform: translateY(0);
+                }
+                50% {
+                    transform: translateY(-5px);
+                }
+            }
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.5;
+                }
+            }
+
+            #c {
+                position: fixed;
+                inset: 0;
+                display: block;
+                z-index: 0;
+            }
+
+            /* ── Loader ── */
+            #loader {
+                position: fixed;
+                inset: 0;
+                z-index: 9999;
+                background: linear-gradient(135deg, #0d1117, #161b28, #0d1117);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                transition:
+                    opacity 0.5s,
+                    visibility 0.5s;
+            }
+            #loader.done {
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
+            #loader .logo-img {
+                width: 80px;
+                height: 80px;
+                object-fit: contain;
+                margin-bottom: 16px;
+                border-radius: 16px;
+            }
+            #loader .logo-fallback {
+                width: 72px;
+                height: 72px;
+                background: linear-gradient(
+                    135deg,
+                    var(--c-pri),
+                    var(--c-pri-dk)
+                );
+                border-radius: 18px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 32px;
+                margin-bottom: 16px;
+                box-shadow: 0 6px 24px rgba(124, 179, 66, 0.3);
+            }
+            #loader h1 {
+                color: #fff;
+                font-size: 22px;
+                font-weight: 700;
+                margin-bottom: 6px;
+                text-align: center;
+                max-width: 300px;
+            }
+            #loader .tag {
+                color: rgba(255, 255, 255, 0.4);
+                font-size: 11px;
+                letter-spacing: 2px;
+                text-transform: uppercase;
+                margin-bottom: 24px;
+            }
+            #loader .spin {
+                width: 36px;
+                height: 36px;
+                border: 3px solid rgba(255, 255, 255, 0.1);
+                border-top-color: var(--c-pri);
+                border-radius: 50%;
+                animation: spin 0.7s linear infinite;
+                margin-bottom: 14px;
+            }
+            #loader .bar {
+                width: 220px;
+                height: 3px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 2px;
+                overflow: hidden;
+                margin-bottom: 6px;
+            }
+            #loader .bar i {
+                display: block;
+                height: 100%;
+                width: 0%;
+                background: linear-gradient(
+                    90deg,
+                    var(--c-pri),
+                    var(--c-pri-lt)
+                );
+                border-radius: 2px;
+                transition: width 0.2s;
+            }
+            #loader .pct {
+                color: rgba(255, 255, 255, 0.35);
+                font-size: 11px;
+                margin-bottom: 4px;
+            }
+            #loader .asset-name {
+                color: rgba(255, 255, 255, 0.2);
+                font-size: 10px;
+                margin-bottom: 20px;
+                min-height: 14px;
+            }
+            #loader button {
+                padding: 10px 28px;
+                background: linear-gradient(
+                    135deg,
+                    var(--c-pri),
+                    var(--c-pri-dk)
+                );
+                color: #fff;
+                border: none;
+                border-radius: var(--r-l);
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                opacity: 0;
+                transform: translateY(8px);
+                transition: all 0.3s;
+                pointer-events: none;
+            }
+            #loader button.show {
+                opacity: 1;
+                transform: translateY(0);
+                pointer-events: auto;
+            }
+
+            /* ── Header ── */
+            #hdr {
+                position: fixed;
+                top: 12px;
+                left: 14px;
+                z-index: 100;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                animation: fadeIn 0.5s 0.3s both;
+            }
+            #hdr .logo {
+                width: 34px;
+                height: 34px;
+                border-radius: var(--r-m);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                box-shadow: var(--sh-m);
+                overflow: hidden;
+                background: linear-gradient(
+                    135deg,
+                    var(--c-pri),
+                    var(--c-pri-dk)
+                );
+            }
+            #hdr .logo img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            #hdr .name {
+                font-size: 14px;
+                font-weight: 700;
+                color: #fff;
+                text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+            }
+            .hbtn {
+                padding: 5px 12px;
+                background: rgba(255, 255, 255, 0.12);
+                backdrop-filter: blur(8px);
+                border: 1px solid rgba(255, 255, 255, 0.14);
+                border-radius: var(--r-m);
+                color: #fff;
+                font-size: 10.5px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: background var(--t1);
+            }
+            .hbtn:hover {
+                background: rgba(255, 255, 255, 0.22);
+            }
+
+            /* ── Detail Panel ── */
+            #detail {
+                position: fixed;
+                top: 14px;
+                right: 14px;
+                width: 350px;
+                max-height: calc(100vh - 28px);
+                z-index: 100;
+                display: flex;
+                flex-direction: column;
+                background: var(--c-card);
+                border-radius: var(--r-xl);
+                border-right: 3px solid var(--c-pri);
+                box-shadow: var(--sh-l);
+                transition: all var(--t2);
+                animation: scaleIn 0.4s 0.35s both;
+                overflow: hidden;
+            }
+            #detail.shut .d-body {
+                max-height: 0;
+                min-height: 0;
+                padding: 0 12px;
+                opacity: 0;
+                overflow: hidden;
+            }
+            .d-hdr {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 11px 12px;
+                border-bottom: 1px solid var(--c-b1);
+                cursor: pointer;
+                user-select: none;
+                flex-shrink: 0;
+            }
+            .d-hdr .ic {
+                width: 28px;
+                height: 28px;
+                background: var(--c-pri-a);
+                border-radius: var(--r-s);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+            }
+            .d-hdr span {
+                font-size: 12.5px;
+                font-weight: 600;
+                flex: 1;
+                color: var(--c-t1);
+            }
+            .tog {
+                width: 24px;
+                height: 24px;
+                background: var(--c-card2);
+                border: 1px solid var(--c-b1);
+                border-radius: var(--r-s);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                color: var(--c-t3);
+                cursor: pointer;
+                transition: all var(--t1);
+                line-height: 1;
+            }
+            .tog:hover {
+                background: var(--c-pri-a);
+                color: var(--c-pri);
+            }
+            .d-body {
+                padding: 12px;
+                overflow-y: auto;
+                min-height: 260px;
+                transition: all var(--t2);
+                flex: 1;
+            }
+            .d-body::-webkit-scrollbar {
+                width: 4px;
+            }
+            .d-body::-webkit-scrollbar-thumb {
+                background: var(--c-b2);
+                border-radius: 2px;
+            }
+
+            .prj-hero {
+                width: 100%;
+                height: 120px;
+                border-radius: var(--r-m);
+                margin-bottom: 10px;
+                overflow: hidden;
+                background: #111;
+                position: relative;
+            }
+            .prj-hero img,
+            .prj-hero video {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+            .prj-hero .ph-icon {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 40px;
+            }
+            .prj-desc {
+                font-size: 11.5px;
+                line-height: 1.6;
+                color: var(--c-t2);
+                background: var(--c-card2);
+                padding: 10px;
+                border-radius: var(--r-m);
+                border: 1px solid var(--c-b1);
+            }
+
+            /* Unit card */
+            .u-card {
+                animation: fadeIn 0.3s;
+                min-height: 140px;
+            }
+            .u-carousel {
+                position: relative;
+                width: 100%;
+                height: 145px;
+                border-radius: var(--r-m);
+                overflow: hidden;
+                margin-bottom: 10px;
+                background: #111;
+            }
+            .u-carousel img,
+            .u-carousel video {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+            .u-carousel .mc {
+                position: absolute;
+                top: 6px;
+                right: 6px;
+                padding: 2px 7px;
+                background: rgba(0, 0, 0, 0.6);
+                border-radius: 8px;
+                font-size: 9px;
+                color: #fff;
+                font-weight: 600;
+            }
+            .cb {
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 26px;
+                height: 26px;
+                background: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(4px);
+                border: none;
+                border-radius: 50%;
+                color: #fff;
+                font-size: 12px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2;
+                transition: background var(--t1);
+            }
+            .cb:hover {
+                background: rgba(0, 0, 0, 0.7);
+            }
+            .cb.p {
+                left: 5px;
+            }
+            .cb.n {
+                right: 5px;
+            }
+            .cdots {
+                position: absolute;
+                bottom: 6px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 3px;
+                z-index: 2;
+            }
+            .cdot {
+                width: 5px;
+                height: 5px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.35);
+                border: none;
+                cursor: pointer;
+                transition: all var(--t1);
+            }
+            .cdot.on {
+                background: #fff;
+                transform: scale(1.3);
+            }
+            .u-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .u-name {
+                font-size: 13px;
+                font-weight: 700;
+                color: var(--c-t1);
+            }
+            .badge {
+                padding: 2px 8px;
+                border-radius: 16px;
+                font-size: 9.5px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+            }
+            .b-ok {
+                background: rgba(34, 197, 94, 0.14);
+                color: var(--c-ok);
+            }
+            .b-warn {
+                background: rgba(245, 158, 11, 0.14);
+                color: var(--c-warn);
+            }
+            .b-err {
+                background: rgba(239, 68, 68, 0.14);
+                color: var(--c-err);
+            }
+            .u-type-label {
+                font-size: 10px;
+                color: var(--c-t3);
+                margin-bottom: 8px;
+            }
+            .u-stats {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 5px;
+                margin-bottom: 8px;
+            }
+            .u-st {
+                text-align: center;
+                padding: 6px 2px;
+                background: var(--c-card2);
+                border-radius: var(--r-s);
+                border: 1px solid var(--c-b1);
+            }
+            .u-st small {
+                display: block;
+                font-size: 8px;
+                color: var(--c-t3);
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+                margin-bottom: 1px;
+            }
+            .u-st b {
+                font-size: 11px;
+                font-weight: 600;
+                color: var(--c-t1);
+            }
+            .u-st b.pr {
+                color: var(--c-pri);
+            }
+            .u-area-breakdown {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 4px;
+                margin-bottom: 8px;
+            }
+            .u-ab {
+                text-align: center;
+                padding: 4px;
+                background: var(--c-card2);
+                border-radius: 4px;
+                border: 1px solid var(--c-b1);
+            }
+            .u-ab small {
+                display: block;
+                font-size: 7.5px;
+                color: var(--c-t3);
+                text-transform: uppercase;
+            }
+            .u-ab b {
+                font-size: 10px;
+                color: var(--c-t1);
+            }
+            .u-desc {
+                font-size: 11px;
+                line-height: 1.55;
+                color: var(--c-t2);
+                background: var(--c-card2);
+                padding: 8px;
+                border-radius: var(--r-s);
+                border: 1px solid var(--c-b1);
+                margin-bottom: 8px;
+            }
+            .u-feats {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 3px;
+                margin-bottom: 8px;
+            }
+            .u-feat {
+                padding: 2px 7px;
+                background: var(--c-pri-a);
+                border-radius: 8px;
+                font-size: 9px;
+                color: var(--c-pri);
+                font-weight: 600;
+            }
+
+            /* Functional areas */
+            .fa-section {
+                margin-bottom: 8px;
+            }
+            .fa-title {
+                font-size: 10px;
+                font-weight: 600;
+                color: var(--c-t3);
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 4px;
+            }
+            .fa-list {
+                background: var(--c-card2);
+                border: 1px solid var(--c-b1);
+                border-radius: var(--r-s);
+                overflow: hidden;
+            }
+            .fa-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 4px 8px;
+                font-size: 10px;
+                border-bottom: 1px solid var(--c-b1);
+            }
+            .fa-row:last-child {
+                border-bottom: none;
+            }
+            .fa-row .fa-name {
+                color: var(--c-t2);
+            }
+            .fa-row .fa-area {
+                color: var(--c-t1);
+                font-weight: 600;
+            }
+
+            .u-actions {
+                display: flex;
+                gap: 5px;
+                flex-wrap: wrap;
+            }
+            .u-btn {
+                flex: 1;
+                min-width: 0;
+                padding: 7px 6px;
+                border: none;
+                border-radius: var(--r-m);
+                font-size: 10px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all var(--t1);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 3px;
+                white-space: nowrap;
+            }
+            .u-btn-p {
+                background: linear-gradient(
+                    135deg,
+                    var(--c-pri),
+                    var(--c-pri-dk)
+                );
+                color: #fff;
+            }
+            .u-btn-p:hover {
+                box-shadow: 0 3px 10px rgba(124, 179, 66, 0.3);
+                transform: translateY(-1px);
+            }
+            .u-btn-s {
+                background: var(--c-card2);
+                color: var(--c-t2);
+                border: 1px solid var(--c-b1);
+            }
+            .u-btn-s:hover {
+                background: var(--c-pri-a);
+                color: var(--c-pri);
+            }
+
+            /* Hotspot card */
+            .hs-card {
+                animation: fadeIn 0.3s;
+            }
+            .hs-head {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+            .hs-ic {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+            }
+            .hs-ti {
+                font-size: 13px;
+                font-weight: 700;
+                color: var(--c-t1);
+            }
+
+            /* ── Search ── */
+            #search {
+                position: fixed;
+                bottom: 14px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 580px;
+                max-width: calc(100% - 28px);
+                z-index: 100;
+                background: var(--c-card);
+                border-radius: var(--r-xl);
+                border-bottom: 3px solid var(--c-pri);
+                box-shadow: var(--sh-l);
+                transition: all var(--t2);
+                animation: slideUp 0.4s 0.45s both;
+                overflow: hidden;
+            }
+            #search.shut {
+                height: 42px;
+            }
+            #search.shut .s-body {
+                max-height: 0;
+                padding: 0 12px;
+                opacity: 0;
+                overflow: hidden;
+            }
+            #search:not(.shut) {
+                height: 265px;
+            }
+            .s-hdr {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 9px 12px;
+                border-bottom: 1px solid var(--c-b1);
+                cursor: pointer;
+                user-select: none;
+                flex-shrink: 0;
+            }
+            .s-hdr .ic {
+                width: 24px;
+                height: 24px;
+                background: var(--c-pri-a);
+                border-radius: var(--r-s);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+            }
+            .s-hdr span {
+                font-size: 12px;
+                font-weight: 600;
+                flex: 1;
+                color: var(--c-t1);
+            }
+            .s-body {
+                padding: 9px 12px;
+                overflow-y: auto;
+                transition: all var(--t2);
+                flex: 1;
+            }
+            .sr {
+                display: flex;
+                gap: 5px;
+                margin-bottom: 6px;
+            }
+            .si {
+                flex: 1;
+                padding: 6px 10px;
+                background: var(--c-inp);
+                border: 1px solid var(--c-b1);
+                border-radius: var(--r-m);
+                font-size: 12px;
+                color: var(--c-t1);
+                outline: none;
+                transition: border var(--t1);
+                font-family: inherit;
+            }
+            .si:focus {
+                border-color: var(--c-pri);
+            }
+            .sb,
+            .rb {
+                padding: 6px 10px;
+                border: none;
+                border-radius: var(--r-m);
+                font-size: 11px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all var(--t1);
+            }
+            .sb {
+                background: var(--c-pri);
+                color: #fff;
+            }
+            .sb:hover {
+                background: var(--c-pri-dk);
+            }
+            .rb {
+                background: var(--c-card2);
+                color: var(--c-t2);
+                border: 1px solid var(--c-b1);
+            }
+            .rb:hover {
+                background: var(--c-pri-a);
+                color: var(--c-pri);
+            }
+            .fs {
+                flex: 1;
+                padding: 5px 8px;
+                background: var(--c-inp);
+                border: 1px solid var(--c-b1);
+                border-radius: var(--r-s);
+                font-size: 11px;
+                color: var(--c-t1);
+                outline: none;
+                cursor: pointer;
+                font-family: inherit;
+            }
+            .rg {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 5px;
+                max-height: 120px;
+                overflow-y: auto;
+            }
+            .rg::-webkit-scrollbar {
+                width: 3px;
+            }
+            .rg::-webkit-scrollbar-thumb {
+                background: var(--c-b2);
+                border-radius: 2px;
+            }
+            .rc {
+                padding: 6px 8px;
+                background: var(--c-card2);
+                border: 1px solid var(--c-b1);
+                border-radius: var(--r-s);
+                cursor: pointer;
+                transition: all var(--t1);
+            }
+            .rc:hover {
+                transform: translateY(-1px);
+                box-shadow: var(--sh-m);
+                border-color: var(--c-pri);
+            }
+            .rc.on {
+                background: var(--c-pri-a);
+                border-color: var(--c-pri);
+            }
+            .rn {
+                font-size: 11px;
+                font-weight: 700;
+                color: var(--c-t1);
+            }
+            .ri {
+                font-size: 9px;
+                color: var(--c-t3);
+            }
+            .rp {
+                font-size: 11px;
+                font-weight: 700;
+                color: var(--c-pri);
+                margin-top: 1px;
+            }
+            .rs {
+                display: inline-block;
+                padding: 1px 5px;
+                border-radius: 6px;
+                font-size: 8px;
+                font-weight: 600;
+                text-transform: uppercase;
+                margin-top: 2px;
+            }
+
+            /* ── Tools ── */
+            #tools {
+                position: fixed;
+                left: 14px;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 100;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                animation: fadeIn 0.4s 0.55s both;
+            }
+            .tb {
+                width: 32px;
+                height: 32px;
+                background: rgba(255, 255, 255, 0.11);
+                backdrop-filter: blur(8px);
+                border: 1px solid rgba(255, 255, 255, 0.13);
+                border-radius: 50%;
+                color: #fff;
+                font-size: 13px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all var(--t1);
+            }
+            .tb:hover {
+                background: rgba(255, 255, 255, 0.22);
+                transform: scale(1.1);
+            }
+            .tb.on {
+                background: var(--c-pri);
+                border-color: var(--c-pri);
+            }
+
+            /* ── Gallery widget ── */
+            #gal {
+                position: fixed;
+                bottom: 14px;
+                right: 14px;
+                z-index: 100;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 12px;
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.11);
+                border-radius: var(--r-xl);
+                cursor: pointer;
+                transition: all var(--t2);
+                animation: slideUp 0.4s 0.6s both;
+            }
+            #gal:hover {
+                background: rgba(255, 255, 255, 0.18);
+                transform: translateY(-2px);
+            }
+            .gt {
+                display: flex;
+                margin-right: -4px;
+            }
+            .gth {
+                width: 40px;
+                height: 40px;
+                border-radius: var(--r-m);
+                border: 2px solid rgba(255, 255, 255, 0.25);
+                margin-right: -8px;
+                overflow: hidden;
+                background: #1a2a4a;
+                transition: transform var(--t3);
+            }
+            .gth:hover {
+                transform: scale(1.1);
+                z-index: 1;
+            }
+            .gth img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            .gmore {
+                width: 40px;
+                height: 40px;
+                border-radius: var(--r-m);
+                background: rgba(0, 0, 0, 0.45);
+                border: 2px solid rgba(255, 255, 255, 0.18);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                font-weight: 700;
+                color: #fff;
+                margin-right: -8px;
+            }
+            .gtxt {
+                margin-left: 8px;
+            }
+            .gtxt .t1 {
+                font-size: 11px;
+                font-weight: 600;
+                color: #fff;
+            }
+            .gtxt .t2 {
+                font-size: 9px;
+                color: rgba(255, 255, 255, 0.4);
+            }
+            .gbtn {
+                padding: 4px 10px;
+                background: var(--c-pri);
+                border: none;
+                border-radius: var(--r-s);
+                color: #fff;
+                font-size: 10px;
+                font-weight: 600;
+                cursor: pointer;
+                margin-left: 2px;
+            }
+
+            /* ── Hotspots ── */
+            .hs {
+                position: fixed;
+                z-index: 50;
+                cursor: pointer;
+                transition: transform var(--t1);
+                pointer-events: auto;
+            }
+            .hs:hover {
+                transform: scale(1.15);
+            }
+            .hs.sel {
+                transform: scale(1.25);
+            }
+            .hs-dome {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                border: 2px solid #fff;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                animation: bob 3s ease-in-out infinite;
+            }
+            .hs-lbl {
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                margin-top: 3px;
+                padding: 2px 6px;
+                background: rgba(0, 0, 0, 0.65);
+                backdrop-filter: blur(4px);
+                border-radius: 4px;
+                font-size: 9px;
+                font-weight: 600;
+                color: #fff;
+                white-space: nowrap;
+            }
+
+            /* ── Lightbox ── */
+            #lb {
+                position: fixed;
+                inset: 0;
+                z-index: 9000;
+                background: rgba(0, 0, 0, 0.92);
+                backdrop-filter: blur(6px);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+            }
+            #lb.open {
+                display: flex;
+            }
+            #lb .lb-media {
+                max-width: 84vw;
+                max-height: 80vh;
+                object-fit: contain;
+                border-radius: var(--r-l);
+                animation: scaleIn 0.25s;
+                box-shadow: var(--sh-l);
+            }
+            #lb video.lb-media {
+                outline: none;
+            }
+            .lb-x,
+            .lb-n {
+                position: absolute;
+                background: rgba(255, 255, 255, 0.12);
+                border: none;
+                border-radius: 50%;
+                color: #fff;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background var(--t1);
+            }
+            .lb-x:hover,
+            .lb-n:hover {
+                background: rgba(255, 255, 255, 0.25);
+            }
+            .lb-x {
+                top: 16px;
+                right: 16px;
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+            .lb-n {
+                top: 50%;
+                transform: translateY(-50%);
+                width: 40px;
+                height: 40px;
+                font-size: 15px;
+            }
+            .lb-n.p {
+                left: 16px;
+            }
+            .lb-n.nx {
+                right: 16px;
+            }
+            .lb-cnt {
+                position: absolute;
+                top: 16px;
+                left: 16px;
+                padding: 4px 10px;
+                background: rgba(0, 0, 0, 0.5);
+                border-radius: 14px;
+                color: #fff;
+                font-size: 11px;
+            }
+            .lb-type {
+                position: absolute;
+                top: 16px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 3px 9px;
+                background: rgba(0, 0, 0, 0.5);
+                border-radius: 10px;
+                color: #fff;
+                font-size: 9px;
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+            }
+            .lb-dots {
+                position: absolute;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 6px;
+            }
+            .lb-dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.25);
+                border: none;
+                cursor: pointer;
+                transition: all var(--t1);
+            }
+            .lb-dot.on {
+                background: #fff;
+                transform: scale(1.3);
+            }
+
+            /* ── Project Details Modal ── */
+            #pd {
+                position: fixed;
+                inset: 0;
+                z-index: 8000;
+                background: rgba(0, 0, 0, 0.55);
+                backdrop-filter: blur(5px);
+                display: none;
+                align-items: center;
+                justify-content: center;
+            }
+            #pd.open {
+                display: flex;
+            }
+            .pd-m {
+                width: 92%;
+                max-width: 560px;
+                max-height: 82vh;
+                background: var(--c-card);
+                border-radius: var(--r-xl);
+                box-shadow: var(--sh-l);
+                overflow-y: auto;
+                animation: scaleIn 0.25s;
+            }
+            .pd-m::-webkit-scrollbar {
+                width: 4px;
+            }
+            .pd-m::-webkit-scrollbar-thumb {
+                background: var(--c-b2);
+                border-radius: 2px;
+            }
+            .pd-h {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 16px 18px 12px;
+                border-bottom: 1px solid var(--c-b1);
+                position: sticky;
+                top: 0;
+                background: var(--c-card);
+                z-index: 1;
+            }
+            .pd-h .ic {
+                width: 36px;
+                height: 36px;
+                background: var(--c-pri-a);
+                border-radius: var(--r-m);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                overflow: hidden;
+            }
+            .pd-h .ic img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            .pd-h .ti {
+                flex: 1;
+                font-size: 16px;
+                font-weight: 700;
+                color: var(--c-t1);
+            }
+            .mcl {
+                width: 28px;
+                height: 28px;
+                background: var(--c-card2);
+                border: 1px solid var(--c-b1);
+                border-radius: var(--r-s);
+                color: var(--c-t3);
+                font-size: 14px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all var(--t1);
+            }
+            .mcl:hover {
+                background: rgba(239, 68, 68, 0.1);
+                color: var(--c-err);
+            }
+            .pd-b {
+                padding: 16px 18px;
+            }
+            .pd-b > p {
+                font-size: 12.5px;
+                line-height: 1.65;
+                color: var(--c-t2);
+                margin-bottom: 14px;
+            }
+            .pd-section {
+                margin-bottom: 14px;
+            }
+            .pd-section-title {
+                font-size: 10px;
+                font-weight: 700;
+                color: var(--c-t3);
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .pd-detail-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+                margin-bottom: 14px;
+            }
+            .pd-detail {
+                padding: 8px 10px;
+                background: var(--c-card2);
+                border-radius: var(--r-s);
+                border: 1px solid var(--c-b1);
+            }
+            .pd-detail small {
+                display: block;
+                font-size: 8px;
+                color: var(--c-t3);
+                text-transform: uppercase;
+                margin-bottom: 2px;
+            }
+            .pd-detail b {
+                font-size: 12px;
+                color: var(--c-t1);
+            }
+            .pd-feats {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+                margin-bottom: 14px;
+            }
+            .pd-f {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 7px 10px;
+                background: var(--c-card2);
+                border-radius: var(--r-m);
+                border: 1px solid var(--c-b1);
+            }
+            .pd-f .fi {
+                font-size: 15px;
+            }
+            .pd-f .ft {
+                font-size: 11px;
+                font-weight: 500;
+                color: var(--c-t2);
+            }
+            .pd-amenities {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5px;
+                margin-bottom: 14px;
+            }
+            .pd-am {
+                padding: 4px 8px;
+                background: var(--c-card2);
+                border: 1px solid var(--c-b1);
+                border-radius: 8px;
+                font-size: 10px;
+                color: var(--c-t2);
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .pd-nearby {
+                margin-bottom: 14px;
+            }
+            .pd-nr {
+                display: flex;
+                justify-content: space-between;
+                padding: 5px 8px;
+                background: var(--c-card2);
+                border: 1px solid var(--c-b1);
+                border-radius: 4px;
+                margin-bottom: 3px;
+                font-size: 10px;
+            }
+            .pd-nr .nr-name {
+                color: var(--c-t1);
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .pd-nr .nr-dist {
+                color: var(--c-t3);
+            }
+            .pd-map {
+                width: 100%;
+                height: 160px;
+                border-radius: var(--r-m);
+                overflow: hidden;
+                margin-bottom: 8px;
+                background: var(--c-card2);
+            }
+            .pd-map iframe {
+                width: 100%;
+                height: 100%;
+                border: none;
+            }
+            .pd-ml {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                width: 100%;
+                padding: 8px;
+                background: var(--c-card2);
+                border: 1px solid var(--c-b1);
+                border-radius: var(--r-m);
+                color: var(--c-pri);
+                font-size: 11px;
+                font-weight: 600;
+                text-decoration: none;
+                transition: background var(--t1);
+            }
+            .pd-ml:hover {
+                background: var(--c-pri-a);
+            }
+
+            /* ── Floor Plan Modal ── */
+            #fp {
+                position: fixed;
+                inset: 0;
+                z-index: 8500;
+                background: rgba(0, 0, 0, 0.55);
+                backdrop-filter: blur(5px);
+                display: none;
+                align-items: center;
+                justify-content: center;
+            }
+            #fp.open {
+                display: flex;
+            }
+            .fp-m {
+                width: 92%;
+                max-width: 700px;
+                background: var(--c-card);
+                border-radius: var(--r-xl);
+                box-shadow: var(--sh-l);
+                overflow: hidden;
+                animation: scaleIn 0.25s;
+            }
+            .fp-hd {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 16px;
+                border-bottom: 1px solid var(--c-b1);
+            }
+            .fp-hd .ti {
+                flex: 1;
+                font-size: 14px;
+                font-weight: 700;
+                color: var(--c-t1);
+            }
+            .fp-tog {
+                display: flex;
+                gap: 2px;
+                background: var(--c-card2);
+                border-radius: var(--r-s);
+                padding: 2px;
+            }
+            .fp-tb {
+                padding: 4px 10px;
+                border: none;
+                border-radius: 3px;
+                font-size: 10px;
+                font-weight: 600;
+                cursor: pointer;
+                color: var(--c-t3);
+                background: transparent;
+                transition: all var(--t1);
+            }
+            .fp-tb.on {
+                background: var(--c-pri);
+                color: #fff;
+            }
+            .fp-bd {
+                padding: 12px 16px;
+            }
+            .fp-nav {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+            .fp-nb {
+                width: 26px;
+                height: 26px;
+                background: var(--c-card2);
+                border: 1px solid var(--c-b1);
+                border-radius: var(--r-s);
+                color: var(--c-t2);
+                font-size: 12px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .fp-fl {
+                padding: 3px 10px;
+                background: var(--c-pri-a);
+                border-radius: 14px;
+                font-size: 11px;
+                font-weight: 600;
+                color: var(--c-pri);
+            }
+            .fp-uc {
+                font-size: 9px;
+                color: var(--c-t3);
+            }
+            .fp-view {
+                width: 100%;
+                height: 380px;
+                border-radius: var(--r-m);
+                border: 1px solid var(--c-b1);
+                overflow: hidden;
+                margin-bottom: 8px;
+                position: relative;
+                background: #111;
+            }
+            .fp-view canvas {
+                width: 100%;
+                height: 100%;
+                display: block;
+            }
+            .fp-view .fp-info {
+                position: absolute;
+                bottom: 8px;
+                left: 8px;
+                padding: 3px 8px;
+                background: rgba(0, 0, 0, 0.6);
+                border-radius: 6px;
+                color: #fff;
+                font-size: 9px;
+            }
+            .fp-leg {
+                display: flex;
+                gap: 12px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .fp-li {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                font-size: 9px;
+                color: var(--c-t2);
+            }
+            .fp-lc {
+                width: 10px;
+                height: 10px;
+                border-radius: 2px;
+            }
+
+            /* ── Panorama Modal ── */
+            #pano {
+                position: fixed;
+                inset: 0;
+                z-index: 8800;
+                background: #000;
+                display: none;
+                flex-direction: column;
+            }
+            #pano.open {
+                display: flex;
+            }
+            #pano canvas {
+                flex: 1;
+            }
+            #pano .pano-hud {
+                position: absolute;
+                top: 14px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 5px 14px;
+                background: rgba(0, 0, 0, 0.6);
+                border-radius: 12px;
+                color: #fff;
+                font-size: 11px;
+                font-weight: 600;
+                z-index: 1;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            #pano .pano-x {
+                position: absolute;
+                top: 14px;
+                right: 14px;
+                width: 36px;
+                height: 36px;
+                background: rgba(255, 255, 255, 0.15);
+                border: none;
+                border-radius: 50%;
+                color: #fff;
+                font-size: 16px;
+                cursor: pointer;
+                z-index: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            #pano .pano-hint {
+                position: absolute;
+                bottom: 18px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 5px 12px;
+                background: rgba(0, 0, 0, 0.5);
+                border-radius: 8px;
+                color: rgba(255, 255, 255, 0.45);
+                font-size: 10px;
+                z-index: 1;
+                animation: pulse 2s infinite;
+            }
+
+            /* ── 2D Floor Plan Image Modal ── */
+            #fp2d-modal {
+                position: fixed;
+                inset: 0;
+                z-index: 8600;
+                background: rgba(0, 0, 0, 0.88);
+                backdrop-filter: blur(6px);
+                display: none;
+                align-items: center;
+                justify-content: center;
+            }
+            #fp2d-modal.open {
+                display: flex;
+            }
+            #fp2d-modal img {
+                max-width: 88vw;
+                max-height: 85vh;
+                object-fit: contain;
+                border-radius: var(--r-l);
+                animation: scaleIn 0.25s;
+            }
+            #fp2d-modal .fp2d-x {
+                position: absolute;
+                top: 16px;
+                right: 16px;
+                width: 36px;
+                height: 36px;
+                background: rgba(255, 255, 255, 0.15);
+                border: none;
+                border-radius: 50%;
+                color: #fff;
+                font-size: 16px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            @media (max-width: 1024px) {
+                #detail {
+                    width: 280px;
+                }
+                #search {
+                    width: 480px;
+                }
+            }
+            @media (max-width: 768px) {
+                #detail {
+                    width: 260px;
+                    top: 52px;
+                    right: 8px;
+                }
+                #search {
+                    width: calc(100% - 14px);
+                    bottom: 8px;
+                }
+                #tools {
+                    left: 8px;
+                }
+                #gal {
+                    right: 8px;
+                    bottom: 8px;
+                }
+                .gtxt {
+                    display: none;
+                }
+                .sr.fil {
+                    flex-direction: column;
+                }
+                .fp-view {
+                    height: 260px;
+                }
+            }
+            @media (max-width: 480px) {
+                #detail {
+                    width: calc(100% - 14px);
+                    right: 7px;
+                    top: auto;
+                    bottom: 52px;
+                    max-height: 42vh;
+                }
+                #hdr {
+                    left: 7px;
+                    top: 7px;
+                }
+                #hdr .name {
+                    font-size: 12px;
+                }
+                #tools {
+                    left: 7px;
+                    top: auto;
+                    bottom: 58px;
+                    transform: none;
+                    flex-direction: row;
+                }
+                .tb {
+                    width: 28px;
+                    height: 28px;
+                    font-size: 11px;
+                }
+                #gal {
+                    display: none;
+                }
+                .fp-view {
+                    height: 200px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="loader">
+            <div class="logo-fallback" id="l-logo">🏙️</div>
+            <h1 id="l-name">Loading…</h1>
+            <p class="tag">Interactive 3D Tour</p>
+            <div class="spin"></div>
+            <div class="bar"><i id="lbar"></i></div>
+            <p class="pct" id="lpct">0%</p>
+            <p class="asset-name" id="l-asset"></p>
+            <button id="lbtn">Enter Tour</button>
+        </div>
+
+        <canvas id="c"></canvas>
+
+        <header id="hdr">
+            <div class="logo" id="h-logo">🏙️</div>
+            <span class="name" id="h-name">Tour</span>
+            <button class="hbtn" id="open-pd">Details</button>
+        </header>
+
+        <aside id="detail">
+            <div class="d-hdr" id="d-hdr">
+                <div class="ic">🏢</div>
+                <span>Details</span><button class="tog" id="d-tog">−</button>
+            </div>
+            <div class="d-body" id="d-body">
+                <div id="d-def">
+                    <div class="prj-hero" id="d-hero">
+                        <span class="ph-icon">🏙️</span>
+                    </div>
+                    <div class="prj-desc" id="d-desc">Loading…</div>
+                </div>
+                <div id="d-dyn"></div>
+            </div>
+        </aside>
+
+        <section id="search" class="shut">
+            <div class="s-hdr" id="s-hdr">
+                <div class="ic">🔍</div>
+                <span>Unit Search</span
+                ><button class="tog" id="s-tog">+</button>
+            </div>
+            <div class="s-body">
+                <div class="sr">
+                    <input
+                        class="si"
+                        id="q"
+                        placeholder="Search units…"
+                    /><button class="sb" id="sbtn">Search</button
+                    ><button class="rb" id="rbtn">Reset</button>
+                </div>
+                <div class="sr fil">
+                    <select class="fs" id="fT">
+                        <option value="">All Types</option></select
+                    ><select class="fs" id="fS">
+                        <option value="">All Status</option>
+                        <option value="Available">Available</option>
+                        <option value="Reserved">Reserved</option>
+                        <option value="Sold">Sold</option></select
+                    ><select class="fs" id="fF">
+                        <option value="">All Floors</option>
+                    </select>
+                </div>
+                <div class="rg" id="rg"></div>
+            </div>
+        </section>
+
+        <nav id="tools">
+            <button class="tb" id="t-dk" title="Dark Mode">🌙</button>
+            <button class="tb" id="t-zi" title="Zoom In">＋</button>
+            <button class="tb" id="t-zo" title="Zoom Out">−</button>
+            <button class="tb" id="t-rs" title="Reset">⟲</button>
+            <button class="tb" id="t-fs" title="Fullscreen">⛶</button>
+        </nav>
+
+        <div id="gal">
+            <div class="gt" id="gal-th"></div>
+            <div class="gtxt">
+                <div class="t1">Gallery</div>
+                <div class="t2" id="gal-cnt"></div>
+            </div>
+            <button class="gbtn">Open</button>
+        </div>
+
+        <div id="lb">
+            <button class="lb-x" id="lb-x">✕</button
+            ><button class="lb-n p" id="lb-p">◀</button
+            ><button class="lb-n nx" id="lb-nx">▶</button>
+            <div class="lb-cnt" id="lb-cnt"></div>
+            <div class="lb-type" id="lb-type"></div>
+            <div class="lb-dots" id="lb-dots"></div>
+        </div>
+
+        <div id="pd">
+            <div class="pd-m">
+                <div class="pd-h">
+                    <div class="ic" id="pd-logo">🏙️</div>
+                    <div class="ti" id="pd-ti">Project</div>
+                    <button class="mcl" id="pd-cl">✕</button>
+                </div>
+                <div class="pd-b" id="pd-b"></div>
+            </div>
+        </div>
+
+        <div id="fp">
+            <div class="fp-m">
+                <div class="fp-hd">
+                    <span class="ti">Floor Plan</span>
+                    <div class="fp-tog">
+                        <button class="fp-tb on" id="fp-2d">2D</button
+                        ><button class="fp-tb" id="fp-3d">3D</button>
+                    </div>
+                    <button class="mcl" id="fp-cl">✕</button>
+                </div>
+                <div class="fp-bd">
+                    <div class="fp-nav">
+                        <button class="fp-nb" id="fp-pv">◀</button
+                        ><span class="fp-fl" id="fp-fl">Floor 1</span
+                        ><button class="fp-nb" id="fp-nx">▶</button
+                        ><span class="fp-uc" id="fp-uc"></span>
+                    </div>
+                    <div class="fp-view" id="fp-view">
+                        <canvas id="fp-can"></canvas>
+                    </div>
+                    <div class="fp-leg">
+                        <div class="fp-li">
+                            <div
+                                class="fp-lc"
+                                style="background: #22c55e"
+                            ></div>
+                            Available
+                        </div>
+                        <div class="fp-li">
+                            <div
+                                class="fp-lc"
+                                style="background: #f59e0b"
+                            ></div>
+                            Reserved
+                        </div>
+                        <div class="fp-li">
+                            <div
+                                class="fp-lc"
+                                style="background: #ef4444"
+                            ></div>
+                            Sold
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="pano">
+            <canvas id="pano-can"></canvas>
+            <div class="pano-hud">
+                <span>🔄</span><span id="pano-ti">Panorama</span>
+            </div>
+            <button class="pano-x" id="pano-x">✕</button>
+            <div class="pano-hint">Drag to look around</div>
+        </div>
+
+        <div id="fp2d-modal">
+            <img id="fp2d-img" src="" alt="Floor Plan" /><button
+                class="fp2d-x"
+                id="fp2d-x"
+            >
+                ✕
+            </button>
+        </div>
+
+        <div id="hs-box"></div>
+
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+                    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+                }
+            }
+        </script>
+        <script type="module">
+            import * as THREE from "three";
+            import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+            import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+            import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+            import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+            import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+
+            const CFG = {
+                dataPath: window.__DATA_PATH || "tour-data.json",
+                zoomStep: 5,
+                flyDur: 1200,
+            };
+            let TD = null;
+
+            // ═══════════════════════════════════════════════
+            // ASSET LOADER
+            // ═══════════════════════════════════════════════
+            const Loader = (() => {
+                let loaded = 0,
+                    total = 0;
+                const bar = () => document.getElementById("lbar");
+                const pct = () => document.getElementById("lpct");
+                const asset = () => document.getElementById("l-asset");
+
+                function upd(label) {
+                    const p = total ? Math.round((loaded / total) * 100) : 0;
+                    bar().style.width = p + "%";
+                    pct().textContent = p + "%";
+                    if (label) asset().textContent = label;
+                }
+
+                function track(name, promise) {
+                    total++;
+                    return promise
+                        .then((r) => {
+                            loaded++;
+                            upd(name + " ✓");
+                            return r;
+                        })
+                        .catch((e) => {
+                            loaded++;
+                            upd(name + " ✗");
+                            throw e;
+                        });
+                }
+
+                async function loadJSON(url) {
+                    return track(
+                        "Tour data",
+                        fetch(url).then((r) => {
+                            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                            return r.json();
+                        }),
+                    );
+                }
+
+                function loadGLB(url, label) {
+                    return track(
+                        label || "Model",
+                        new Promise((res, rej) => {
+                            const l = new GLTFLoader();
+                            const d = new DRACOLoader();
+                            d.setDecoderPath(
+                                "https://www.gstatic.com/draco/versioned/decoders/1.5.6/",
+                            );
+                            l.setDRACOLoader(d);
+                            l.setMeshoptDecoder(MeshoptDecoder);
+                            l.load(
+                                url,
+                                (g) => res(g),
+                                (xhr) => {
+                                    if (xhr.total)
+                                        asset().textContent = `${label || "Model"} ${Math.round((xhr.loaded / xhr.total) * 100)}%`;
+                                },
+                                rej,
+                            );
+                        }),
+                    );
+                }
+
+                function loadHDRI(url) {
+                    return track(
+                        "Environment",
+                        new Promise((res, rej) => {
+                            new RGBELoader().load(
+                                url,
+                                (t) => {
+                                    t.mapping =
+                                        THREE.EquirectangularReflectionMapping;
+                                    res(t);
+                                },
+                                undefined,
+                                rej,
+                            );
+                        }),
+                    );
+                }
+
+                function preloadImages(urls) {
+                    if (!urls || !urls.length) return Promise.resolve([]);
+                    return track(
+                        `${urls.length} images`,
+                        Promise.allSettled(
+                            urls.map(
+                                (u) =>
+                                    new Promise((r, j) => {
+                                        const i = new Image();
+                                        i.crossOrigin = "anonymous";
+                                        i.onload = () => r(i);
+                                        i.onerror = j;
+                                        i.src = u;
+                                    }),
+                            ),
+                        ),
+                    );
+                }
+
+                function finish() {
+                    upd("Ready!");
+                    document.getElementById("lbtn").classList.add("show");
+                }
+
+                return {
+                    loadJSON,
+                    loadGLB,
+                    loadHDRI,
+                    preloadImages,
+                    finish,
+                    upd,
+                };
+            })();
+
+            // ═══════════════════════════════════════════════
+            // ENGINE
+            // ═══════════════════════════════════════════════
+            const Engine = (() => {
+                let renderer,
+                    scene,
+                    camera,
+                    controls,
+                    defCam,
+                    defTgt,
+                    flying = false;
+
+                function init() {
+                    const canvas = document.getElementById("c");
+                    renderer = new THREE.WebGLRenderer({
+                        canvas,
+                        antialias: true,
+                        powerPreference: "high-performance",
+                    });
+                    renderer.setSize(innerWidth, innerHeight);
+                    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+                    renderer.shadowMap.enabled = true;
+                    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                    renderer.toneMappingExposure = 1.2;
+                    renderer.outputColorSpace = THREE.SRGBColorSpace;
+                    scene = new THREE.Scene();
+                    scene.fog = new THREE.Fog(0x0f172a, 60, 200);
+                    camera = new THREE.PerspectiveCamera(
+                        50,
+                        innerWidth / innerHeight,
+                        0.1,
+                        500,
+                    );
+                    controls = new OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.dampingFactor = 0.06;
+                    controls.minDistance = 2;
+                    controls.maxDistance = 150;
+                    controls.maxPolarAngle = Math.PI / 2 - 0.02;
+                    addEventListener("resize", () => {
+                        camera.aspect = innerWidth / innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(innerWidth, innerHeight);
+                    });
+                }
+
+                function configure(data) {
+                    defCam = new THREE.Vector3(
+                        ...(data.defaultCamera || [0, 8, 22]),
+                    );
+                    defTgt = new THREE.Vector3(
+                        ...(data.defaultTarget || [0, 0, 0]),
+                    );
+                    camera.position.copy(defCam);
+                    controls.target.copy(defTgt);
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+                    const sun = new THREE.DirectionalLight(0xfff5e6, 1.8);
+                    sun.position.set(10, 25, 12);
+                    sun.castShadow = true;
+                    sun.shadow.mapSize.set(2048, 2048);
+                    sun.shadow.camera.near = 0.5;
+                    sun.shadow.camera.far = 80;
+                    sun.shadow.camera.left = sun.shadow.camera.bottom = -30;
+                    sun.shadow.camera.right = sun.shadow.camera.top = 30;
+                    sun.shadow.bias = -0.001;
+                    scene.add(sun);
+                    scene.add(
+                        new THREE.DirectionalLight(0x8899cc, 0.4)
+                            .translateX(-10)
+                            .translateY(8)
+                            .translateZ(-6),
+                    );
+                    const gnd = new THREE.Mesh(
+                        new THREE.PlaneGeometry(200, 200),
+                        new THREE.MeshStandardMaterial({
+                            color: 0x141e30,
+                            roughness: 0.85,
+                            metalness: 0.1,
+                        }),
+                    );
+                    gnd.rotation.x = -Math.PI / 2;
+                    gnd.position.y = -0.05;
+                    gnd.receiveShadow = true;
+                    scene.add(gnd);
+                }
+
+                function setEnv(tex) {
+                    scene.environment = tex;
+                    scene.background = tex;
+                }
+                function setFallbackBg() {
+                    const cv = document.createElement("canvas");
+                    cv.width = cv.height = 512;
+                    const cx = cv.getContext("2d");
+                    const g = cx.createLinearGradient(0, 0, 0, 512);
+                    g.addColorStop(0, "#1e3050");
+                    g.addColorStop(0.45, "#0f172a");
+                    g.addColorStop(1, "#080c14");
+                    cx.fillStyle = g;
+                    cx.fillRect(0, 0, 512, 512);
+                    cx.filter = "blur(24px)";
+                    cx.drawImage(cv, 0, 0);
+                    const t = new THREE.CanvasTexture(cv);
+                    t.mapping = THREE.EquirectangularReflectionMapping;
+                    scene.background = t;
+                    scene.environment = t;
+                }
+
+                function flyTo(pos, look, dur = CFG.flyDur) {
+                    return new Promise((res) => {
+                        if (flying) return res();
+                        flying = true;
+                        controls.enabled = false;
+                        const sp = camera.position.clone(),
+                            st = controls.target.clone(),
+                            t0 = performance.now();
+                        const ease = (t) =>
+                            t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+                        (function step(now) {
+                            const p = Math.min((now - t0) / dur, 1),
+                                e = ease(p);
+                            camera.position.lerpVectors(sp, pos, e);
+                            controls.target.lerpVectors(st, look, e);
+                            controls.update();
+                            if (p < 1) requestAnimationFrame(step);
+                            else {
+                                flying = false;
+                                controls.enabled = true;
+                                res();
+                            }
+                        })(t0);
+                    });
+                }
+
+                function zoom(dir) {
+                    const d = new THREE.Vector3();
+                    camera.getWorldDirection(d);
+                    const nv = camera.position
+                        .clone()
+                        .add(d.multiplyScalar(dir * CFG.zoomStep));
+                    const dist = nv.distanceTo(controls.target);
+                    if (dist >= 2 && dist <= 150) camera.position.copy(nv);
+                }
+                function resetView() {
+                    return flyTo(defCam.clone(), defTgt.clone());
+                }
+
+                const _pv = new THREE.Vector3();
+                function project(pos) {
+                    _pv.copy(pos).project(camera);
+                    if (_pv.z > 1 || _pv.z < -1) return null;
+                    return {
+                        x: (_pv.x * 0.5 + 0.5) * innerWidth,
+                        y: (-_pv.y * 0.5 + 0.5) * innerHeight,
+                    };
+                }
+                function render() {
+                    controls.update();
+                    renderer.render(scene, camera);
+                }
+
+                return {
+                    init,
+                    configure,
+                    setEnv,
+                    setFallbackBg,
+                    flyTo,
+                    zoom,
+                    resetView,
+                    project,
+                    render,
+                    isFlying: () => flying,
+                    scene: () => scene,
+                    camera: () => camera,
+                    controls: () => controls,
+                    renderer: () => renderer,
+                };
+            })();
+
+            // ═══════════════════════════════════════════════
+            // MODEL + AUTO-TAG
+            // ═══════════════════════════════════════════════
+            const Model = (() => {
+                const map = new Map();
+                function loadBuilding(gltf) {
+                    const root = gltf.scene;
+                    const t = TD.modelTransform || {};
+                    if (t.position) root.position.set(...t.position);
+                    if (t.rotation)
+                        root.rotation.set(
+                            ...t.rotation.map((v) => (v * Math.PI) / 180),
+                        );
+                    if (t.scale) {
+                        const s = Array.isArray(t.scale)
+                            ? t.scale
+                            : [t.scale, t.scale, t.scale];
+                        root.scale.set(...s);
+                    }
+
+                    root.updateMatrixWorld(true);
+
+                    let matched = 0,
+                        totalMeshes = 0;
+                    const allNames = [];
+                    const seen = new Set();
+                    root.traverse((child) => {
+                        if (child.isMesh) {
+                            totalMeshes++;
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            const nodeName = child.name?.trim() || "";
+                            const geomName = child.geometry?.name?.trim() || "";
+
+                            if (allNames.length < 60) {
+                                allNames.push({
+                                    node: nodeName || "(empty)",
+                                    geom: geomName || "(empty)",
+                                });
+                            }
+
+                            const names = [nodeName, geomName].filter((n) => n);
+                            const norm = (s) =>
+                                s.toLowerCase().replace(/[\s_\-\.]/g, "");
+
+                            const unit = TD.units.find((u) => {
+                                if (seen.has(u.id)) return false;
+                                return names.some(
+                                    (name) =>
+                                        u.meshName === name ||
+                                        u.unitNumber === name ||
+                                        u.name === name ||
+                                        u.id === name ||
+                                        norm(name) === norm(u.meshName || "") ||
+                                        norm(name) === norm(u.name) ||
+                                        norm(name) === norm(u.unitNumber),
+                                );
+                            });
+
+                            if (unit) {
+                                seen.add(unit.id);
+                                matched++;
+                                map.set(unit.id, child);
+                                child.geometry.computeBoundingBox();
+                                const box = child.geometry.boundingBox
+                                    .clone()
+                                    .applyMatrix4(child.matrixWorld);
+                                unit._meshBBox = box;
+                                unit._mesh = child;
+                                child.userData = {
+                                    unitId: unit.id,
+                                    isUnit: true,
+                                };
+                            }
+                        }
+                    });
+
+                    console.log(
+                        "[Model] Total meshes:",
+                        totalMeshes,
+                        "| Matched",
+                        matched,
+                        "/",
+                        TD.units.length,
+                    );
+                    console.log(
+                        "[Model] First 40 names:",
+                        allNames.slice(0, 40),
+                    );
+                    Engine.scene().add(root);
+                    return root;
+                }
+
+                function buildFallback() {
+                    const g = new THREE.Group();
+                    // Simple multi-floor placeholder
+                    const floors = TD.projectDetails?.totalFloors || 17;
+                    const floorH = 3.2;
+                    for (let i = 0; i < floors; i++) {
+                        const slab = new THREE.Mesh(
+                            new THREE.BoxGeometry(28, 0.08, 16),
+                            new THREE.MeshStandardMaterial({
+                                color: 0x556688,
+                                roughness: 0.45,
+                                metalness: 0.3,
+                            }),
+                        );
+                        slab.position.set(0, i * floorH, -3);
+                        slab.castShadow = true;
+                        g.add(slab);
+                    }
+                    const shell = new THREE.Mesh(
+                        new THREE.BoxGeometry(28, floors * floorH, 16),
+                        new THREE.MeshStandardMaterial({
+                            color: 0x2a3a5a,
+                            roughness: 0.25,
+                            metalness: 0.65,
+                            transparent: true,
+                            opacity: 0.3,
+                        }),
+                    );
+                    shell.position.set(0, (floors * floorH) / 2, -3);
+                    shell.castShadow = true;
+                    g.add(shell);
+                    // Top accent
+                    const top = new THREE.Mesh(
+                        new THREE.BoxGeometry(28, 0.15, 16),
+                        new THREE.MeshStandardMaterial({
+                            color: 0x7cb342,
+                            roughness: 0.4,
+                            metalness: 0.5,
+                        }),
+                    );
+                    top.position.set(0, floors * floorH, -3);
+                    g.add(top);
+                    Engine.scene().add(g);
+                }
+
+                return { loadBuilding, buildFallback, map };
+            })();
+
+            // ═══════════════════════════════════════════════
+            // UNITS
+            // ═══════════════════════════════════════════════
+            const Units = (() => {
+                const meshes = [];
+                let selected = null;
+                const rc = new THREE.Raycaster(),
+                    ms = new THREE.Vector2();
+
+                function build() {
+                    const sc = TD.statusColors ||
+                        CFG.statusCol || {
+                            Available: "#22c55e",
+                            Reserved: "#f59e0b",
+                            Sold: "#ef4444",
+                        };
+                    TD.units.forEach((u) => {
+                        if (u._mesh) {
+                            const ov = u._mesh.clone();
+                            ov.material = new THREE.MeshBasicMaterial({
+                                color: new THREE.Color(
+                                    sc[u.status] || "#22c55e",
+                                ),
+                                transparent: true,
+                                opacity: 0,
+                                depthWrite: false,
+                                side: THREE.DoubleSide,
+                            });
+                            ov.userData = {
+                                id: u.id,
+                                unit: u,
+                                isOverlay: true,
+                            };
+                            ov.renderOrder = 999;
+                            Engine.scene().add(ov);
+                            meshes.push(ov);
+                            u._mesh.userData = { id: u.id, unit: u };
+                            meshes.push(u._mesh);
+                        } else if (u.bbox) {
+                            const mn = new THREE.Vector3(...u.bbox.min),
+                                mx = new THREE.Vector3(...u.bbox.max);
+                            const sz = new THREE.Vector3().subVectors(mx, mn),
+                                ct = new THREE.Vector3()
+                                    .addVectors(mn, mx)
+                                    .multiplyScalar(0.5);
+                            const col = sc[u.status] || "#22c55e";
+                            const mat = new THREE.MeshBasicMaterial({
+                                color: new THREE.Color(col),
+                                transparent: true,
+                                opacity: 0.16,
+                                depthWrite: false,
+                            });
+                            const mesh = new THREE.Mesh(
+                                new THREE.BoxGeometry(sz.x, sz.y, sz.z),
+                                mat,
+                            );
+                            mesh.position.copy(ct);
+                            mesh.userData = { id: u.id, unit: u };
+                            mesh.add(
+                                new THREE.LineSegments(
+                                    new THREE.EdgesGeometry(mesh.geometry),
+                                    new THREE.LineBasicMaterial({
+                                        color: new THREE.Color(col),
+                                        transparent: true,
+                                        opacity: 0.45,
+                                    }),
+                                ),
+                            );
+                            Engine.scene().add(mesh);
+                            meshes.push(mesh);
+                        }
+                    });
+                }
+
+                function onClick(e) {
+                    if (Engine.isFlying()) return;
+                    ms.x = (e.clientX / innerWidth) * 2 - 1;
+                    ms.y = -(e.clientY / innerHeight) * 2 + 1;
+                    rc.setFromCamera(ms, Engine.camera());
+                    const hits = rc.intersectObjects(meshes, false);
+                    if (hits.length) {
+                        const ud = hits[0].object.userData;
+                        if (ud.unit) select(ud.unit);
+                    }
+                }
+
+                function select(unit) {
+                    deselect();
+                    selected = unit;
+                    meshes.forEach((m) => {
+                        if (m.userData.id === unit.id) {
+                            if (m.userData.isOverlay) m.material.opacity = 0.3;
+                            else if (m.material.transparent)
+                                m.material.opacity = 0.35;
+                        }
+                    });
+                    let center;
+                    if (unit._meshBBox) {
+                        center = new THREE.Vector3();
+                        unit._meshBBox.getCenter(center);
+                    } else if (unit.bbox) {
+                        center = new THREE.Vector3(
+                            (unit.bbox.min[0] + unit.bbox.max[0]) / 2,
+                            (unit.bbox.min[1] + unit.bbox.max[1]) / 2,
+                            (unit.bbox.min[2] + unit.bbox.max[2]) / 2,
+                        );
+                    } else center = new THREE.Vector3(0, 10, 0);
+                    Engine.flyTo(
+                        center.clone().add(new THREE.Vector3(4, 3, 8)),
+                        center,
+                    );
+                    UI.expandDetail();
+                    UI.showUnitCard(unit);
+                    Search.highlight(unit.id);
+                }
+
+                function deselect() {
+                    selected = null;
+                    meshes.forEach((m) => {
+                        if (m.userData.isOverlay) m.material.opacity = 0;
+                        else if (m.material.transparent && m.userData.unit)
+                            m.material.opacity = 0.16;
+                    });
+                }
+
+                return {
+                    build,
+                    onClick,
+                    select,
+                    deselect,
+                    selected: () => selected,
+                };
+            })();
+
+            // ═══════════════════════════════════════════════
+            // HOTSPOTS
+            // ═══════════════════════════════════════════════
+            const Hotspots = (() => {
+                const items = [];
+                function build() {
+                    if (!TD.hotspots) return;
+                    const box = document.getElementById("hs-box");
+                    TD.hotspots.forEach((h) => {
+                        const el = document.createElement("div");
+                        el.className = "hs";
+                        el.innerHTML = `<div class="hs-dome" style="background:${h.color}">${h.icon}</div><div class="hs-lbl">${h.label}</div>`;
+                        el.onclick = () => select(h);
+                        box.appendChild(el);
+                        items.push({
+                            el,
+                            pos: new THREE.Vector3(...h.position),
+                            data: h,
+                        });
+                    });
+                }
+                function update() {
+                    items.forEach(({ el, pos }) => {
+                        const p = Engine.project(pos);
+                        if (
+                            !p ||
+                            p.x < -50 ||
+                            p.x > innerWidth + 50 ||
+                            p.y < -50 ||
+                            p.y > innerHeight + 50
+                        ) {
+                            el.style.display = "none";
+                            return;
+                        }
+                        el.style.display = "block";
+                        el.style.left = p.x + "px";
+                        el.style.top = p.y + "px";
+                        el.style.transform = "translate(-50%,-50%)";
+                    });
+                }
+                function select(h) {
+                    items.forEach(({ el, data }) =>
+                        el.classList.toggle("sel", data.id === h.id),
+                    );
+                    Units.deselect();
+                    Search.highlight(null);
+                    const hp = new THREE.Vector3(...h.position);
+                    Engine.flyTo(
+                        hp.clone().add(new THREE.Vector3(3, 3, 6)),
+                        hp,
+                    );
+                    UI.expandDetail();
+                    UI.showHotspotCard(h);
+                }
+                function clear() {
+                    items.forEach(({ el }) => el.classList.remove("sel"));
+                }
+                return { build, update, select, clear };
+            })();
+
+            // ═══════════════════════════════════════════════
+            // SEARCH
+            // ═══════════════════════════════════════════════
+            const Search = (() => {
+                let deb = null;
+                function init() {
+                    const types = [...new Set(TD.units.map((u) => u.type))];
+                    const tSel = document.getElementById("fT");
+                    tSel.innerHTML = '<option value="">All Types</option>';
+                    types.forEach((t) => {
+                        const o = document.createElement("option");
+                        o.value = t;
+                        o.textContent = t;
+                        tSel.appendChild(o);
+                    });
+                    const floors = [
+                        ...new Set(TD.units.map((u) => u.floor)),
+                    ].sort((a, b) => a - b);
+                    const fSel = document.getElementById("fF");
+                    floors.forEach((f) => {
+                        const o = document.createElement("option");
+                        o.value = f;
+                        o.textContent = `Floor ${f}`;
+                        fSel.appendChild(o);
+                    });
+                    render(TD.units);
+                }
+                function filter() {
+                    const q = document.getElementById("q").value.toLowerCase();
+                    const ft = document.getElementById("fT").value,
+                        fs = document.getElementById("fS").value,
+                        ff = document.getElementById("fF").value;
+                    const res = TD.units.filter((u) => {
+                        if (
+                            q &&
+                            !u.name.toLowerCase().includes(q) &&
+                            !u.type.toLowerCase().includes(q) &&
+                            !(u.description || "").toLowerCase().includes(q) &&
+                            !u.unitNumber.includes(q)
+                        )
+                            return false;
+                        if (ft && u.type !== ft) return false;
+                        if (fs && u.status !== fs) return false;
+                        if (ff && u.floor !== +ff) return false;
+                        return true;
+                    });
+                    render(res);
+                }
+                function render(units) {
+                    const grid = document.getElementById("rg");
+                    if (!units.length) {
+                        grid.innerHTML =
+                            '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--c-t3)"><div style="font-size:20px;margin-bottom:4px">🔍</div><div style="font-size:11px">No units found</div></div>';
+                        return;
+                    }
+                    const sc = TD.statusColors || {};
+                    const sel = Units.selected();
+                    grid.innerHTML = units
+                        .map((u) => {
+                            const c = sc[u.status] || "#22c55e";
+                            return `<div class="rc${sel && sel.id === u.id ? " on" : ""}" data-uid="${u.id}"><div class="rn">${u.name}</div><div class="ri">${u.type} · F${u.floor} · ${u.areaBreakdown ? u.areaBreakdown.total : u.area}m²</div><div class="rp">${u.priceFormatted || "$" + u.price?.toLocaleString() || "TBD"}</div><span class="rs" style="background:${c}18;color:${c}">${u.status}</span></div>`;
+                        })
+                        .join("");
+                    grid.querySelectorAll(".rc").forEach((card) => {
+                        card.onclick = () => {
+                            const u = TD.units.find(
+                                (x) => x.id === card.dataset.uid,
+                            );
+                            if (u) Units.select(u);
+                        };
+                    });
+                }
+                function highlight(id) {
+                    document
+                        .querySelectorAll(".rc")
+                        .forEach((c) =>
+                            c.classList.toggle("on", c.dataset.uid === id),
+                        );
+                }
+                function reset() {
+                    document.getElementById("q").value = "";
+                    document.getElementById("fT").value = "";
+                    document.getElementById("fS").value = "";
+                    document.getElementById("fF").value = "";
+                    render(TD.units);
+                }
+                function debounceFilter() {
+                    clearTimeout(deb);
+                    deb = setTimeout(filter, 150);
+                }
+                return { init, filter, debounceFilter, highlight, reset };
+            })();
+
+            // ═══════════════════════════════════════════════
+            // GALLERY & LIGHTBOX
+            // ═══════════════════════════════════════════════
+            const Gallery = (() => {
+                let items = [],
+                    idx = 0,
+                    mediaEl = null,
+                    orig = null;
+                function isVid(url) {
+                    if (!url) return false;
+                    const e = url.split(".").pop().toLowerCase().split("?")[0];
+                    return ["mp4", "webm", "mov", "ogg"].includes(e);
+                }
+                function init() {
+                    items = (TD.gallery || []).map((g) => ({
+                        url: g.url || g,
+                        type: g.type || (isVid(g.url || g) ? "video" : "image"),
+                        label: g.label || "",
+                    }));
+                    const box = document.getElementById("gal-th");
+                    box.innerHTML = "";
+                    items.slice(0, 3).forEach((it) => {
+                        const d = document.createElement("div");
+                        d.className = "gth";
+                        if (it.url && it.type === "image") {
+                            d.innerHTML = `<img src="${it.url}" alt="" loading="lazy">`;
+                        } else {
+                            d.style.cssText =
+                                "background:linear-gradient(135deg,#1a3050,#0d1820);display:flex;align-items:center;justify-content:center;font-size:16px";
+                            d.textContent = it.type === "video" ? "🎬" : "📷";
+                        }
+                        box.appendChild(d);
+                    });
+                    if (items.length > 3) {
+                        const m = document.createElement("div");
+                        m.className = "gmore";
+                        m.textContent = `+${items.length - 3}`;
+                        box.appendChild(m);
+                    }
+                    document.getElementById("gal-cnt").textContent =
+                        `${items.length} items`;
+                    document.getElementById("gal").onclick = () => open(0);
+                }
+                function open(i) {
+                    idx = i;
+                    document.getElementById("lb").classList.add("open");
+                    refresh();
+                }
+                function close() {
+                    document.getElementById("lb").classList.remove("open");
+                    if (mediaEl) {
+                        if (mediaEl.tagName === "VIDEO") mediaEl.pause();
+                        mediaEl.remove();
+                        mediaEl = null;
+                    }
+                    if (orig) {
+                        items = orig;
+                        orig = null;
+                    }
+                }
+                function refresh() {
+                    if (!items.length) return;
+                    const it = items[idx];
+                    if (mediaEl) {
+                        mediaEl.remove();
+                        mediaEl = null;
+                    }
+                    const lb = document.getElementById("lb");
+                    if (it.type === "video" && it.url) {
+                        mediaEl = document.createElement("video");
+                        mediaEl.className = "lb-media";
+                        mediaEl.src = it.url;
+                        mediaEl.controls = true;
+                        mediaEl.autoplay = true;
+                    } else {
+                        mediaEl = document.createElement("img");
+                        mediaEl.className = "lb-media";
+                        if (it.url) mediaEl.src = it.url;
+                        else {
+                            const cv = document.createElement("canvas");
+                            cv.width = 800;
+                            cv.height = 500;
+                            const cx = cv.getContext("2d");
+                            cx.fillStyle = `hsl(${120 + idx * 30},30%,25%)`;
+                            cx.fillRect(0, 0, 800, 500);
+                            cx.font = "40px serif";
+                            cx.textAlign = "center";
+                            cx.fillText("📷", 400, 230);
+                            cx.fillStyle = "rgba(255,255,255,.3)";
+                            cx.font = "14px sans-serif";
+                            cx.fillText(
+                                it.label || `Image ${idx + 1}`,
+                                400,
+                                280,
+                            );
+                            mediaEl.src = cv.toDataURL();
+                        }
+                    }
+                    lb.insertBefore(
+                        mediaEl,
+                        document.getElementById("lb-dots"),
+                    );
+                    document.getElementById("lb-cnt").textContent =
+                        `${idx + 1} / ${items.length}`;
+                    document.getElementById("lb-type").textContent =
+                        it.type === "video" ? "🎬 Video" : "📷 Photo";
+                    const dots = document.getElementById("lb-dots");
+                    dots.innerHTML = "";
+                    for (let i = 0; i < items.length; i++) {
+                        const d = document.createElement("button");
+                        d.className = "lb-dot" + (i === idx ? " on" : "");
+                        d.onclick = () => {
+                            idx = i;
+                            refresh();
+                        };
+                        dots.appendChild(d);
+                    }
+                }
+                function nav(dir) {
+                    if (!items.length) return;
+                    idx = (idx + dir + items.length) % items.length;
+                    refresh();
+                }
+                function openCustom(mi, si) {
+                    orig = items;
+                    items = mi;
+                    idx = si || 0;
+                    document.getElementById("lb").classList.add("open");
+                    refresh();
+                }
+                return { init, open, close, nav, openCustom };
+            })();
+
+            // ═══════════════════════════════════════════════
+            // PANORAMA
+            // ═══════════════════════════════════════════════
+            const Panorama = (() => {
+                let pS,
+                    pC,
+                    pR,
+                    pCtrl,
+                    active = false;
+                function init2() {
+                    const cv = document.getElementById("pano-can");
+                    pR = new THREE.WebGLRenderer({
+                        canvas: cv,
+                        antialias: true,
+                    });
+                    pR.setPixelRatio(Math.min(devicePixelRatio, 2));
+                    pS = new THREE.Scene();
+                    pC = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+                    pC.position.set(0, 0, 0.1);
+                    pCtrl = new OrbitControls(pC, cv);
+                    pCtrl.enableZoom = true;
+                    pCtrl.enablePan = false;
+                    pCtrl.rotateSpeed = -0.3;
+                    pCtrl.enableDamping = true;
+                    pCtrl.dampingFactor = 0.1;
+                }
+                function open(url, title) {
+                    if (!pR) init2();
+                    active = true;
+                    document.getElementById("pano").classList.add("open");
+                    document.getElementById("pano-ti").textContent =
+                        title || "Panorama";
+                    const el = document.getElementById("pano");
+                    pR.setSize(el.clientWidth, el.clientHeight);
+                    pC.aspect = el.clientWidth / el.clientHeight;
+                    pC.updateProjectionMatrix();
+                    new THREE.TextureLoader().load(url, (tex) => {
+                        tex.colorSpace = THREE.SRGBColorSpace;
+                        const geo = new THREE.SphereGeometry(50, 60, 40);
+                        geo.scale(-1, 1, 1);
+                        pS.children.forEach((c) => {
+                            pS.remove(c);
+                            c.geometry?.dispose();
+                            c.material?.dispose();
+                        });
+                        pS.add(
+                            new THREE.Mesh(
+                                geo,
+                                new THREE.MeshBasicMaterial({ map: tex }),
+                            ),
+                        );
+                    });
+                    (function r() {
+                        if (!active) return;
+                        requestAnimationFrame(r);
+                        pCtrl.update();
+                        pR.render(pS, pC);
+                    })();
+                    const onR = () => {
+                        if (!active) return;
+                        pR.setSize(el.clientWidth, el.clientHeight);
+                        pC.aspect = el.clientWidth / el.clientHeight;
+                        pC.updateProjectionMatrix();
+                    };
+                    addEventListener("resize", onR);
+                    el._onR = onR;
+                }
+                function close() {
+                    active = false;
+                    document.getElementById("pano").classList.remove("open");
+                    const el = document.getElementById("pano");
+                    if (el._onR) removeEventListener("resize", el._onR);
+                }
+                return { open, close };
+            })();
+
+            // ═══════════════════════════════════════════════
+            // FLOOR PLAN
+            // ═══════════════════════════════════════════════
+            const FloorPlan = (() => {
+                let floor = 3,
+                    view = "2d",
+                    fp3dScene,
+                    fp3dCamera,
+                    fp3dRenderer,
+                    fp3dControls,
+                    fp3dActive = false;
+
+                function open(f) {
+                    floor = f || 3;
+                    view = "2d";
+                    document.getElementById("fp").classList.add("open");
+                    document.getElementById("fp-2d").classList.add("on");
+                    document.getElementById("fp-3d").classList.remove("on");
+                    showView();
+                }
+                function close() {
+                    document.getElementById("fp").classList.remove("open");
+                    fp3dActive = false;
+                }
+
+                function showView() {
+                    const can = document.getElementById("fp-can");
+                    if (view === "2d") {
+                        can.style.display = "block";
+                        const old = document
+                            .getElementById("fp-view")
+                            .querySelector(".fp3dc");
+                        if (old) old.style.display = "none";
+                        fp3dActive = false;
+                        draw2D();
+                    } else {
+                        can.style.display = "none";
+                        init3D();
+                    }
+                }
+
+                function draw2D() {
+                    const can = document.getElementById("fp-can"),
+                        ctx = can.getContext("2d");
+                    const units = TD.units.filter((u) => u.floor === floor);
+                    const cont = document.getElementById("fp-view");
+                    can.width = cont.clientWidth || 600;
+                    can.height = cont.clientHeight || 380;
+                    const W = can.width,
+                        H = can.height;
+                    const sc = TD.statusColors || {};
+
+                    document.getElementById("fp-fl").textContent =
+                        `Floor ${floor}`;
+                    document.getElementById("fp-uc").textContent =
+                        `${units.length} unit${units.length !== 1 ? "s" : ""}`;
+
+                    ctx.fillStyle =
+                        getComputedStyle(document.documentElement)
+                            .getPropertyValue("--c-card2")
+                            .trim() || "#f9fafb";
+                    ctx.fillRect(0, 0, W, H);
+                    ctx.strokeStyle = "rgba(128,128,128,.05)";
+                    ctx.lineWidth = 1;
+                    for (let x = 0; x < W; x += 25) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, 0);
+                        ctx.lineTo(x, H);
+                        ctx.stroke();
+                    }
+                    for (let y = 0; y < H; y += 25) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, y);
+                        ctx.lineTo(W, y);
+                        ctx.stroke();
+                    }
+
+                    if (!units.length) {
+                        ctx.fillStyle = "#888";
+                        ctx.font = "14px sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.fillText("No units on this floor", W / 2, H / 2);
+                        return;
+                    }
+
+                    const bbs = units
+                        .map((u) => {
+                            if (u._meshBBox)
+                                return {
+                                    u,
+                                    mnX: u._meshBBox.min.x,
+                                    mxX: u._meshBBox.max.x,
+                                    mnZ: u._meshBBox.min.z,
+                                    mxZ: u._meshBBox.max.z,
+                                };
+                            if (u.bbox)
+                                return {
+                                    u,
+                                    mnX: u.bbox.min[0],
+                                    mxX: u.bbox.max[0],
+                                    mnZ: u.bbox.min[2],
+                                    mxZ: u.bbox.max[2],
+                                };
+                            return null;
+                        })
+                        .filter(Boolean);
+                    if (!bbs.length) return;
+
+                    const aMnX = Math.min(...bbs.map((b) => b.mnX)),
+                        aMxX = Math.max(...bbs.map((b) => b.mxX));
+                    const aMnZ = Math.min(...bbs.map((b) => b.mnZ)),
+                        aMxZ = Math.max(...bbs.map((b) => b.mxZ));
+                    const rX = aMxX - aMnX || 1,
+                        rZ = aMxZ - aMnZ || 1;
+                    const pad = 45,
+                        scale = Math.min(
+                            (W - pad * 2) / rX,
+                            (H - pad * 2) / rZ,
+                            60,
+                        );
+                    const oX = W / 2,
+                        oZ = H / 2,
+                        cX = (aMnX + aMxX) / 2,
+                        cZ = (aMnZ + aMxZ) / 2;
+
+                    bbs.forEach(({ u, mnX, mxX, mnZ, mxZ }) => {
+                        const x1 = oX + (mnX - cX) * scale,
+                            z1 = oZ + (mnZ - cZ) * scale,
+                            x2 = oX + (mxX - cX) * scale,
+                            z2 = oZ + (mxZ - cZ) * scale;
+                        const ux = Math.min(x1, x2),
+                            uz = Math.min(z1, z2),
+                            uw = Math.abs(x2 - x1) || 50,
+                            uh = Math.abs(z2 - z1) || 35;
+                        const col = sc[u.status] || "#22c55e";
+
+                        ctx.fillStyle = col + "22";
+                        ctx.beginPath();
+                        if (ctx.roundRect) ctx.roundRect(ux, uz, uw, uh, 3);
+                        else ctx.rect(ux, uz, uw, uh);
+                        ctx.fill();
+                        ctx.strokeStyle = col;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        ctx.fillStyle = col;
+                        ctx.fillRect(ux + uw / 2 - 6, uz + uh - 2, 12, 2);
+
+                        const tc =
+                            getComputedStyle(document.documentElement)
+                                .getPropertyValue("--c-t1")
+                                .trim() || "#333";
+                        ctx.fillStyle = tc;
+                        ctx.font = "bold 10px sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(
+                            u.unitNumber || u.name,
+                            ux + uw / 2,
+                            uz + uh / 2 - 8,
+                        );
+                        ctx.font = "8px sans-serif";
+                        ctx.fillStyle = col;
+                        ctx.fillText(
+                            `${u.areaBreakdown ? u.areaBreakdown.total : u.area}m² · ${u.type}`,
+                            ux + uw / 2,
+                            uz + uh / 2 + 4,
+                        );
+                        ctx.beginPath();
+                        ctx.arc(ux + 8, uz + 8, 3, 0, Math.PI * 2);
+                        ctx.fillStyle = col;
+                        ctx.fill();
+                    });
+
+                    ctx.fillStyle =
+                        getComputedStyle(document.documentElement)
+                            .getPropertyValue("--c-t3")
+                            .trim() || "#888";
+                    ctx.font = "10px sans-serif";
+                    ctx.textAlign = "left";
+                    ctx.textBaseline = "top";
+                    ctx.fillText(
+                        `Floor ${floor} — ${units.length} units`,
+                        10,
+                        10,
+                    );
+                }
+
+                function init3D() {
+                    const cont = document.getElementById("fp-view");
+                    let cv = cont.querySelector(".fp3dc");
+                    if (!cv) {
+                        cv = document.createElement("canvas");
+                        cv.className = "fp3dc";
+                        cv.style.cssText =
+                            "width:100%;height:100%;display:block";
+                        cont.appendChild(cv);
+                    }
+                    cv.style.display = "block";
+                    const W = cont.clientWidth,
+                        H = cont.clientHeight;
+                    if (!fp3dRenderer) {
+                        fp3dRenderer = new THREE.WebGLRenderer({
+                            canvas: cv,
+                            antialias: true,
+                            alpha: true,
+                        });
+                        fp3dRenderer.shadowMap.enabled = true;
+                        fp3dRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+                        fp3dRenderer.outputColorSpace = THREE.SRGBColorSpace;
+                    }
+                    fp3dRenderer.setSize(W, H);
+                    fp3dRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+                    fp3dScene = new THREE.Scene();
+                    fp3dScene.background = new THREE.Color(
+                        getComputedStyle(document.documentElement)
+                            .getPropertyValue("--c-card2")
+                            .trim() || "#f9fafb",
+                    );
+                    fp3dCamera = new THREE.PerspectiveCamera(
+                        45,
+                        W / H,
+                        0.1,
+                        200,
+                    );
+                    fp3dCamera.position.set(12, 15, 12);
+                    fp3dControls = new OrbitControls(fp3dCamera, cv);
+                    fp3dControls.enableDamping = true;
+                    fp3dControls.dampingFactor = 0.08;
+                    fp3dScene.add(new THREE.AmbientLight(0xffffff, 0.6));
+                    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+                    sun.position.set(5, 15, 5);
+                    sun.castShadow = true;
+                    fp3dScene.add(sun);
+
+                    build3DFloor();
+                    fp3dActive = true;
+                    (function r() {
+                        if (!fp3dActive) return;
+                        requestAnimationFrame(r);
+                        fp3dControls.update();
+                        fp3dRenderer.render(fp3dScene, fp3dCamera);
+                    })();
+                }
+
+                function build3DFloor() {
+                    const units = TD.units.filter((u) => u.floor === floor);
+                    const sc = TD.statusColors || {};
+                    const slab = new THREE.Mesh(
+                        new THREE.BoxGeometry(18, 0.12, 12),
+                        new THREE.MeshStandardMaterial({
+                            color: 0xdddddd,
+                            roughness: 0.8,
+                        }),
+                    );
+                    slab.position.y = -0.06;
+                    slab.receiveShadow = true;
+                    fp3dScene.add(slab);
+                    if (!units.length) return;
+                    const bbs = units
+                        .map((u) => {
+                            if (u.bbox)
+                                return {
+                                    u,
+                                    mnX: u.bbox.min[0],
+                                    mxX: u.bbox.max[0],
+                                    mnZ: u.bbox.min[2],
+                                    mxZ: u.bbox.max[2],
+                                };
+                            if (u._meshBBox)
+                                return {
+                                    u,
+                                    mnX: u._meshBBox.min.x,
+                                    mxX: u._meshBBox.max.x,
+                                    mnZ: u._meshBBox.min.z,
+                                    mxZ: u._meshBBox.max.z,
+                                };
+                            return null;
+                        })
+                        .filter(Boolean);
+                    if (!bbs.length) return;
+                    const cX =
+                        (Math.min(...bbs.map((b) => b.mnX)) +
+                            Math.max(...bbs.map((b) => b.mxX))) /
+                        2;
+                    const cZ =
+                        (Math.min(...bbs.map((b) => b.mnZ)) +
+                            Math.max(...bbs.map((b) => b.mxZ))) /
+                        2;
+
+                    bbs.forEach(({ u, mnX, mxX, mnZ, mxZ }) => {
+                        const w = Math.abs(mxX - mnX) || 2,
+                            d = Math.abs(mxZ - mnZ) || 2,
+                            wH = 2.6;
+                        const col = new THREE.Color(sc[u.status] || "#22c55e");
+                        const fl = new THREE.Mesh(
+                            new THREE.BoxGeometry(w, 0.02, d),
+                            new THREE.MeshStandardMaterial({
+                                color: col,
+                                transparent: true,
+                                opacity: 0.2,
+                            }),
+                        );
+                        fl.position.set(
+                            (mnX + mxX) / 2 - cX,
+                            0.01,
+                            (mnZ + mxZ) / 2 - cZ,
+                        );
+                        fp3dScene.add(fl);
+                        const wm = new THREE.MeshStandardMaterial({
+                            color: 0xcccccc,
+                            transparent: true,
+                            opacity: 0.55,
+                        });
+                        [
+                            {
+                                p: [(mnX + mxX) / 2 - cX, wH / 2, mnZ - cZ],
+                                s: [w, wH, 0.06],
+                            },
+                            {
+                                p: [(mnX + mxX) / 2 - cX, wH / 2, mxZ - cZ],
+                                s: [w, wH, 0.06],
+                            },
+                            {
+                                p: [mnX - cX, wH / 2, (mnZ + mxZ) / 2 - cZ],
+                                s: [0.06, wH, d],
+                            },
+                            {
+                                p: [mxX - cX, wH / 2, (mnZ + mxZ) / 2 - cZ],
+                                s: [0.06, wH, d],
+                            },
+                        ].forEach((wl) => {
+                            const m = new THREE.Mesh(
+                                new THREE.BoxGeometry(...wl.s),
+                                wm.clone(),
+                            );
+                            m.position.set(...wl.p);
+                            m.castShadow = true;
+                            fp3dScene.add(m);
+                        });
+                        const edge = new THREE.Mesh(
+                            new THREE.BoxGeometry(w + 0.08, 0.04, d + 0.08),
+                            new THREE.MeshBasicMaterial({ color: col }),
+                        );
+                        edge.position.set(
+                            (mnX + mxX) / 2 - cX,
+                            wH,
+                            (mnZ + mxZ) / 2 - cZ,
+                        );
+                        fp3dScene.add(edge);
+
+                        // Label
+                        const cv = document.createElement("canvas");
+                        cv.width = 256;
+                        cv.height = 64;
+                        const cx = cv.getContext("2d");
+                        cx.fillStyle = "rgba(0,0,0,.55)";
+                        cx.beginPath();
+                        if (cx.roundRect) cx.roundRect(4, 4, 248, 56, 10);
+                        else cx.rect(4, 4, 248, 56);
+                        cx.fill();
+                        cx.fillStyle = "#fff";
+                        cx.font = "bold 22px sans-serif";
+                        cx.textAlign = "center";
+                        cx.textBaseline = "middle";
+                        cx.fillText(u.unitNumber || u.name, 128, 32);
+                        const tex = new THREE.CanvasTexture(cv);
+                        const sp = new THREE.Sprite(
+                            new THREE.SpriteMaterial({
+                                map: tex,
+                                transparent: true,
+                            }),
+                        );
+                        sp.scale.set(1.8, 0.45, 1);
+                        sp.position.set(
+                            (mnX + mxX) / 2 - cX,
+                            wH + 0.5,
+                            (mnZ + mxZ) / 2 - cZ,
+                        );
+                        fp3dScene.add(sp);
+                    });
+                }
+
+                function navFloor(dir) {
+                    const floors = [
+                        ...new Set(TD.units.map((u) => u.floor)),
+                    ].sort((a, b) => a - b);
+                    if (!floors.length) return;
+                    const i = floors.indexOf(floor);
+                    floor = floors[(i + dir + floors.length) % floors.length];
+                    if (view === "2d") draw2D();
+                    else {
+                        if (fp3dScene) {
+                            while (fp3dScene.children.length)
+                                fp3dScene.remove(fp3dScene.children[0]);
+                            fp3dScene.add(
+                                new THREE.AmbientLight(0xffffff, 0.6),
+                            );
+                            const s = new THREE.DirectionalLight(0xffffff, 1.2);
+                            s.position.set(5, 15, 5);
+                            s.castShadow = true;
+                            fp3dScene.add(s);
+                            build3DFloor();
+                        }
+                    }
+                }
+
+                function setView(v) {
+                    view = v;
+                    document
+                        .getElementById("fp-2d")
+                        .classList.toggle("on", v === "2d");
+                    document
+                        .getElementById("fp-3d")
+                        .classList.toggle("on", v === "3d");
+                    showView();
+                }
+
+                return { open, close, navFloor, setView };
+            })();
+
+            // ═══════════════════════════════════════════════
+            // UI
+            // ═══════════════════════════════════════════════
+            const UI = (() => {
+                let dark = localStorage.getItem("dark") === "1";
+
+                function init() {
+                    if (dark) applyDark(true);
+                    wireAll();
+                }
+                function applyDark(on) {
+                    dark = on;
+                    document.documentElement.setAttribute(
+                        "data-theme",
+                        on ? "dark" : "",
+                    );
+                    localStorage.setItem("dark", on ? "1" : "0");
+                    const b = document.getElementById("t-dk");
+                    b.textContent = on ? "☀️" : "🌙";
+                    b.classList.toggle("on", on);
+                }
+
+                function wireAll() {
+                    document.getElementById("d-hdr").onclick = () => {
+                        document
+                            .getElementById("detail")
+                            .classList.toggle("shut");
+                        document.getElementById("d-tog").textContent = document
+                            .getElementById("detail")
+                            .classList.contains("shut")
+                            ? "+"
+                            : "−";
+                    };
+                    document.getElementById("s-hdr").onclick = () => {
+                        document
+                            .getElementById("search")
+                            .classList.toggle("shut");
+                        document.getElementById("s-tog").textContent = document
+                            .getElementById("search")
+                            .classList.contains("shut")
+                            ? "+"
+                            : "−";
+                    };
+                    document.getElementById("q").oninput =
+                        Search.debounceFilter;
+                    document.getElementById("sbtn").onclick = Search.filter;
+                    document.getElementById("rbtn").onclick = Search.reset;
+                    ["fT", "fS", "fF"].forEach(
+                        (id) =>
+                            (document.getElementById(id).onchange =
+                                Search.filter),
+                    );
+                    document.getElementById("t-dk").onclick = () =>
+                        applyDark(!dark);
+                    document.getElementById("t-zi").onclick = () =>
+                        Engine.zoom(1);
+                    document.getElementById("t-zo").onclick = () =>
+                        Engine.zoom(-1);
+                    document.getElementById("t-rs").onclick = () => {
+                        Engine.resetView();
+                        Units.deselect();
+                        Hotspots.clear();
+                        resetDetail();
+                        Search.highlight(null);
+                    };
+                    document.getElementById("t-fs").onclick = () => {
+                        try {
+                            document.fullscreenElement
+                                ? document.exitFullscreen()
+                                : document.documentElement.requestFullscreen();
+                        } catch (e) {}
+                    };
+                    document.getElementById("lb-x").onclick = Gallery.close;
+                    document.getElementById("lb-p").onclick = () =>
+                        Gallery.nav(-1);
+                    document.getElementById("lb-nx").onclick = () =>
+                        Gallery.nav(1);
+                    document.getElementById("lb").onclick = (e) => {
+                        if (e.target.id === "lb") Gallery.close();
+                    };
+                    document.getElementById("open-pd").onclick = () =>
+                        document.getElementById("pd").classList.add("open");
+                    document.getElementById("pd-cl").onclick = () =>
+                        document.getElementById("pd").classList.remove("open");
+                    document.getElementById("pd").onclick = (e) => {
+                        if (e.target.id === "pd")
+                            document
+                                .getElementById("pd")
+                                .classList.remove("open");
+                    };
+                    document.getElementById("fp-cl").onclick = FloorPlan.close;
+                    document.getElementById("fp").onclick = (e) => {
+                        if (e.target.id === "fp") FloorPlan.close();
+                    };
+                    document.getElementById("fp-pv").onclick = () =>
+                        FloorPlan.navFloor(-1);
+                    document.getElementById("fp-nx").onclick = () =>
+                        FloorPlan.navFloor(1);
+                    document.getElementById("fp-2d").onclick = () =>
+                        FloorPlan.setView("2d");
+                    document.getElementById("fp-3d").onclick = () =>
+                        FloorPlan.setView("3d");
+                    document.getElementById("pano-x").onclick = Panorama.close;
+                    document.getElementById("fp2d-x").onclick = () =>
+                        document
+                            .getElementById("fp2d-modal")
+                            .classList.remove("open");
+                    document.getElementById("fp2d-modal").onclick = (e) => {
+                        if (e.target.id === "fp2d-modal")
+                            document
+                                .getElementById("fp2d-modal")
+                                .classList.remove("open");
+                    };
+                    addEventListener("keydown", (e) => {
+                        if (e.key === "Escape") {
+                            Gallery.close();
+                            document
+                                .getElementById("pd")
+                                .classList.remove("open");
+                            FloorPlan.close();
+                            Panorama.close();
+                            document
+                                .getElementById("fp2d-modal")
+                                .classList.remove("open");
+                        }
+                        if (
+                            document
+                                .getElementById("lb")
+                                .classList.contains("open")
+                        ) {
+                            if (e.key === "ArrowLeft") Gallery.nav(-1);
+                            if (e.key === "ArrowRight") Gallery.nav(1);
+                        }
+                    });
+                }
+
+                function populateProject() {
+                    document.getElementById("h-name").textContent =
+                        TD.projectName || "Tour";
+                    // Logo
+                    if (TD.media?.developerLogo) {
+                        document.getElementById("h-logo").innerHTML =
+                            `<img src="${TD.media.developerLogo}" alt="logo">`;
+                        document.getElementById("pd-logo").innerHTML =
+                            `<img src="${TD.media.developerLogo}" alt="logo" style="width:100%;height:100%;object-fit:cover">`;
+                    }
+                    document.getElementById("pd-ti").textContent =
+                        TD.projectName;
+
+                    // Hero in detail panel
+                    const hero = document.getElementById("d-hero");
+                    if (TD.media?.heroVideo) {
+                        hero.innerHTML = `<video src="${TD.media.heroVideo}" autoplay muted loop playsinline></video>`;
+                    } else if (TD.media?.heroImage) {
+                        hero.innerHTML = `<img src="${TD.media.heroImage}" alt="">`;
+                    }
+                    document.getElementById("d-desc").textContent =
+                        TD.projectDescription || "";
+
+                    // Project details modal
+                    const pd = TD.projectDetails || {};
+                    const coords = TD.coordinates || { lat: 0, lng: 0 };
+                    let html = `<p>${TD.projectDescription || ""}</p>`;
+
+                    // Details grid
+                    const details = [
+                        { l: "Location", v: pd.location },
+                        { l: "Building Type", v: pd.buildingType },
+                        { l: "Structure", v: pd.buildingSize },
+                        {
+                            l: "Lot Size",
+                            v: pd.lotSize ? pd.lotSize + " m²" : null,
+                        },
+                        { l: "Delivery", v: pd.deliveryTime },
+                        { l: "Parking", v: pd.parkingType },
+                        { l: "Total Floors", v: pd.totalFloors },
+                        { l: "Units/Floor", v: pd.unitsPerFloor },
+                        { l: "Total Units", v: pd.totalUnits },
+                        { l: "Basement", v: pd.basement ? "Yes" : "No" },
+                    ].filter((d) => d.v);
+                    if (details.length) {
+                        html += `<div class="pd-section"><div class="pd-section-title">🏗️ Building Details</div><div class="pd-detail-grid">${details.map((d) => `<div class="pd-detail"><small>${d.l}</small><b>${d.v}</b></div>`).join("")}</div></div>`;
+                    }
+
+                    // Features
+                    if (TD.features?.length) {
+                        html += `<div class="pd-section"><div class="pd-section-title">✨ Features</div><div class="pd-feats">${TD.features.map((f) => `<div class="pd-f"><span class="fi">${f.icon}</span><span class="ft">${f.text}</span></div>`).join("")}</div></div>`;
+                    }
+
+                    // Amenities
+                    if (TD.amenities?.length) {
+                        html += `<div class="pd-section"><div class="pd-section-title">🏠 Amenities</div><div class="pd-amenities">${TD.amenities.map((a) => `<span class="pd-am">${a.icon} ${a.name}</span>`).join("")}</div></div>`;
+                    }
+
+                    // Nearby
+                    if (TD.nearbyAttractions?.length) {
+                        html += `<div class="pd-section"><div class="pd-section-title">📍 Nearby</div><div class="pd-nearby">${TD.nearbyAttractions
+                            .slice(0, 8)
+                            .map(
+                                (n) =>
+                                    `<div class="pd-nr"><span class="nr-name">${n.icon || ""} ${n.name}</span><span class="nr-dist">${n.distance}</span></div>`,
+                            )
+                            .join("")}</div></div>`;
+                    }
+
+                    // Map
+                    if (coords.lat && coords.lng) {
+                        html += `<div class="pd-map"><iframe src="https://maps.google.com/maps?q=${coords.lat},${coords.lng}&z=15&output=embed" loading="lazy" title="Map"></iframe></div><a class="pd-ml" href="https://maps.google.com/maps?q=${coords.lat},${coords.lng}" target="_blank" rel="noopener">📍 Open in Google Maps</a>`;
+                    }
+
+                    document.getElementById("pd-b").innerHTML = html;
+
+                    // Loader branding
+                    if (TD.media?.developerLogo) {
+                        const lLogo = document.getElementById("l-logo");
+                        lLogo.outerHTML = `<img class="logo-img" src="${TD.media.developerLogo}" alt="logo">`;
+                    }
+                    document.getElementById("l-name").textContent =
+                        TD.projectName || "Tour";
+                }
+
+                function expandDetail() {
+                    document.getElementById("detail").classList.remove("shut");
+                    document.getElementById("d-tog").textContent = "−";
+                }
+
+                function showUnitCard(unit) {
+                    document.getElementById("d-def").style.display = "none";
+                    const d = document.getElementById("d-dyn");
+                    const bc =
+                        unit.status === "Available"
+                            ? "b-ok"
+                            : unit.status === "Reserved"
+                              ? "b-warn"
+                              : "b-err";
+                    const media = collectMedia(unit);
+                    const typeInfo = TD.unitTypes?.[unit.unitType];
+
+                    // Carousel
+                    let car;
+                    if (media.length) {
+                        const f = media[0];
+                        const tag =
+                            f.type === "video"
+                                ? `<video src="${f.url}" muted autoplay loop playsinline></video>`
+                                : `<img src="${f.url}" alt="">`;
+                        car = `<div class="u-carousel" id="u-car">${tag}${media.length > 1 ? `<button class="cb p" id="cp">◀</button><button class="cb n" id="cn">▶</button><div class="cdots" id="cdots">${media.map((_, i) => `<button class="cdot${i === 0 ? " on" : ""}" data-i="${i}"></button>`).join("")}</div>` : ""}
+      <div class="mc">${media.length > 1 ? `1/${media.length}` : f.type === "video" ? "🎬" : "📷"}</div></div>`;
+                    } else
+                        car =
+                            '<div class="u-carousel" style="display:flex;align-items:center;justify-content:center;font-size:36px;color:rgba(255,255,255,.4)">🏠</div>';
+
+                    // Actions
+                    let acts = `<button class="u-btn u-btn-p" id="uc-fp">📐 Floor Plan</button>`;
+                    if (unit.floorPlan)
+                        acts += `<button class="u-btn u-btn-s" id="uc-fp2d">📄 2D Plan</button>`;
+                    if (unit.panorama)
+                        acts += `<button class="u-btn u-btn-s" id="uc-pano">🔄 Panorama</button>`;
+                    if (media.length)
+                        acts += `<button class="u-btn u-btn-s" id="uc-gal">📷 ${media.length}</button>`;
+
+                    // Functional areas
+                    let faHTML = "";
+                    const fas =
+                        unit.functionalAreas || typeInfo?.functionalAreas;
+                    if (fas?.length) {
+                        faHTML = `<div class="fa-section"><div class="fa-title">Room Breakdown</div><div class="fa-list">${fas.map((f) => `<div class="fa-row"><span class="fa-name">${f.name}</span><span class="fa-area">${f.area} m²</span></div>`).join("")}</div></div>`;
+                    }
+
+                    // Area breakdown
+                    let abHTML = "";
+                    const ab = unit.areaBreakdown;
+                    if (ab) {
+                        abHTML = `<div class="u-area-breakdown"><div class="u-ab"><small>Net</small><b>${ab.net}m²</b></div><div class="u-ab"><small>Common</small><b>${ab.common}m²</b></div><div class="u-ab"><small>Total</small><b>${ab.total}m²</b></div></div>`;
+                    }
+
+                    d.innerHTML = `<div class="u-card">${car}
+      <div class="u-head"><span class="u-name">${unit.name}</span><span class="badge ${bc}">${unit.status}</span></div>
+      ${typeInfo ? `<div class="u-type-label">${typeInfo.label || unit.unitType} · ${unit.bedrooms || typeInfo.bedrooms} Bed · ${unit.bathrooms || typeInfo.bathrooms} Bath</div>` : ""}
+      <div class="u-stats">
+        <div class="u-st"><small>Type</small><b>${unit.type}</b></div>
+        <div class="u-st"><small>Floor</small><b>${unit.floor}</b></div>
+        <div class="u-st"><small>Area</small><b>${ab ? ab.total : unit.area}m²</b></div>
+        <div class="u-st"><small>Price</small><b class="pr">${unit.priceFormatted || "$" + (unit.price?.toLocaleString() || "TBD")}</b></div>
+      </div>
+      ${abHTML}
+      <div class="u-desc">${unit.description || ""}</div>
+      ${unit.features?.length ? `<div class="u-feats">${unit.features.map((f) => `<span class="u-feat">${f}</span>`).join("")}</div>` : ""}
+      ${faHTML}
+      <div class="u-actions">${acts}</div>
+    </div>`;
+
+                    // Wire carousel
+                    if (media.length > 1) {
+                        let ci = 0;
+                        const upd = () => {
+                            const car2 = document.getElementById("u-car");
+                            if (!car2) return;
+                            const m = media[ci];
+                            const old = car2.querySelector("img,video");
+                            let ne;
+                            if (m.type === "video") {
+                                ne = document.createElement("video");
+                                ne.src = m.url;
+                                ne.muted = true;
+                                ne.autoplay = true;
+                                ne.loop = true;
+                                ne.playsInline = true;
+                            } else {
+                                ne = document.createElement("img");
+                                ne.src = m.url;
+                            }
+                            if (old) old.replaceWith(ne);
+                            car2.querySelector(".mc").textContent =
+                                `${ci + 1}/${media.length}`;
+                            car2.querySelectorAll(".cdot").forEach((dot, i) =>
+                                dot.classList.toggle("on", i === ci),
+                            );
+                        };
+                        d.querySelector("#cp")?.addEventListener(
+                            "click",
+                            () => {
+                                ci = (ci - 1 + media.length) % media.length;
+                                upd();
+                            },
+                        );
+                        d.querySelector("#cn")?.addEventListener(
+                            "click",
+                            () => {
+                                ci = (ci + 1) % media.length;
+                                upd();
+                            },
+                        );
+                        d.querySelectorAll(".cdot").forEach((dot) =>
+                            dot.addEventListener("click", () => {
+                                ci = parseInt(dot.dataset.i);
+                                upd();
+                            }),
+                        );
+                    }
+
+                    d.querySelector("#uc-fp")?.addEventListener("click", () =>
+                        FloorPlan.open(unit.floor),
+                    );
+                    d.querySelector("#uc-fp2d")?.addEventListener(
+                        "click",
+                        () => {
+                            document.getElementById("fp2d-img").src =
+                                unit.floorPlan;
+                            document
+                                .getElementById("fp2d-modal")
+                                .classList.add("open");
+                        },
+                    );
+                    d.querySelector("#uc-pano")?.addEventListener("click", () =>
+                        Panorama.open(unit.panorama, unit.name),
+                    );
+                    d.querySelector("#uc-gal")?.addEventListener("click", () =>
+                        Gallery.openCustom(media, 0),
+                    );
+                }
+
+                function collectMedia(unit) {
+                    const m = [];
+                    const isV = (u) => {
+                        if (!u) return false;
+                        const e = u.split(".").pop().toLowerCase();
+                        return ["mp4", "webm", "mov", "ogg"].includes(e);
+                    };
+                    if (unit.image && !m.find((x) => x.url === unit.image))
+                        m.push({
+                            url: unit.image,
+                            type: isV(unit.image) ? "video" : "image",
+                            label: unit.name,
+                        });
+                    if (unit.images)
+                        unit.images.forEach((img, i) => {
+                            const url = typeof img === "string" ? img : img.url;
+                            if (url && !m.find((x) => x.url === url))
+                                m.push({
+                                    url,
+                                    type: isV(url) ? "video" : "image",
+                                    label: `${unit.name} ${i + 1}`,
+                                });
+                        });
+                    if (unit.videos)
+                        unit.videos.forEach((v) => {
+                            const url = typeof v === "string" ? v : v.url;
+                            if (url)
+                                m.push({ url, type: "video", label: "Video" });
+                        });
+                    return m;
+                }
+
+                function showHotspotCard(h) {
+                    document.getElementById("d-def").style.display = "none";
+                    const d = document.getElementById("d-dyn");
+                    const media = [];
+                    if (h.images)
+                        h.images.forEach((img) => {
+                            const url = typeof img === "string" ? img : img.url;
+                            if (url)
+                                media.push({
+                                    url,
+                                    type: "image",
+                                    label: h.label,
+                                });
+                        });
+                    if (h.videos)
+                        h.videos.forEach((v) => {
+                            const url = typeof v === "string" ? v : v.url;
+                            if (url)
+                                media.push({
+                                    url,
+                                    type: "video",
+                                    label: h.label,
+                                });
+                        });
+                    let mHTML = "";
+                    if (media.length) {
+                        const f = media[0];
+                        mHTML = `<div class="u-carousel">${f.type === "video" ? `<video src="${f.url}" controls muted autoplay></video>` : `<img src="${f.url}" alt="">`}</div>`;
+                    }
+                    d.innerHTML = `<div class="hs-card">${mHTML}<div class="hs-head"><div class="hs-ic" style="background:${h.color}">${h.icon}</div><span class="hs-ti">${h.label}</span></div><div class="u-desc">${h.description || ""}</div>
+    ${media.length > 1 ? `<button class="u-btn u-btn-s" style="margin-top:6px;width:100%" id="hs-gal">📷 View All (${media.length})</button>` : ""}</div>`;
+                    d.querySelector("#hs-gal")?.addEventListener("click", () =>
+                        Gallery.openCustom(media, 0),
+                    );
+                }
+
+                function resetDetail() {
+                    document.getElementById("d-def").style.display = "";
+                    document.getElementById("d-dyn").innerHTML = "";
+                }
+
+                return {
+                    init,
+                    expandDetail,
+                    showUnitCard,
+                    showHotspotCard,
+                    resetDetail,
+                    populateProject,
+                };
+            })();
+
+            // ═══════════════════════════════════════════════
+            // BOOT
+            // ═══════════════════════════════════════════════
+            async function boot() {
+                Engine.init();
+                try {
+                    TD = await Loader.loadJSON(CFG.dataPath);
+                } catch (e) {
+                    console.warn("No tour-data.json");
+                    TD = {
+                        projectName: "Demo Tour",
+                        units: [],
+                        hotspots: [],
+                        gallery: [],
+                    };
+                }
+                TD.units = TD.units || [];
+                TD.hotspots = TD.hotspots || [];
+                TD.gallery = TD.gallery || [];
+                TD.units.forEach((u) => {
+                    u.id = u.id || u.unitNumber || u.name;
+                    u.description = u.description || u.desc || "";
+                    u.features = u.features || u.feats || [];
+                });
+
+                Engine.configure(TD);
+
+                if (TD.hdri) {
+                    try {
+                        Engine.setEnv(await Loader.loadHDRI(TD.hdri));
+                    } catch (e) {
+                        Engine.setFallbackBg();
+                    }
+                } else Engine.setFallbackBg();
+                if (TD.modelFile) {
+                    try {
+                        Model.loadBuilding(
+                            await Loader.loadGLB(TD.modelFile, "Building"),
+                        );
+                    } catch (e) {
+                        Model.buildFallback();
+                    }
+                } else Model.buildFallback();
+
+                const urls = new Set();
+                TD.gallery.forEach((g) => {
+                    if (g.url) urls.add(g.url);
+                });
+                TD.units.forEach((u) => {
+                    if (u.image) urls.add(u.image);
+                    if (u.images)
+                        u.images.forEach((img) => {
+                            const url = typeof img === "string" ? img : img.url;
+                            if (url) urls.add(url);
+                        });
+                });
+                if (urls.size)
+                    await Loader.preloadImages([...urls].slice(0, 20)); // cap at 20 for speed
+
+                Units.build();
+                Hotspots.build();
+                Search.init();
+                Gallery.init();
+                UI.init();
+                UI.populateProject();
+                Loader.finish();
+                document.getElementById("lbtn").onclick = () =>
+                    document.getElementById("loader").classList.add("done");
+                setTimeout(
+                    () =>
+                        document.getElementById("loader").classList.add("done"),
+                    3500,
+                );
+                document
+                    .getElementById("c")
+                    .addEventListener("click", Units.onClick);
+                let frame = 0;
+                (function loop() {
+                    requestAnimationFrame(loop);
+                    frame++;
+                    Engine.render();
+                    if (frame % 2 === 0) Hotspots.update();
+                })();
+            }
+
+            boot();
+        </script>
+    </body>
+</html>
