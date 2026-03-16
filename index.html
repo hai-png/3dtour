@@ -45,8 +45,8 @@ button{font-family:inherit;border:none;cursor:pointer}
 #intro.gone{opacity:0;visibility:hidden;pointer-events:none}
 #intro .intro-bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(8px) brightness(.4);transform:scale(1.1)}
 #intro .intro-content{position:relative;z-index:1;text-align:center;animation:introZoom 1.2s ease both}
-#intro .intro-logo{width:90px;height:90px;border-radius:22px;margin:0 auto 20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.4);background:linear-gradient(135deg,var(--pri),var(--pri-d));display:flex;align-items:center;justify-content:center;font-size:38px}
-#intro .intro-logo img{width:100%;height:100%;object-fit:cover}
+#intro .intro-logo{width:90px;height:90px;border-radius:22px;margin:0 auto 20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.4);background:#fff;display:flex;align-items:center;justify-content:center;padding:8px}
+#intro .intro-logo img{width:100%;height:100%;object-fit:contain}
 #intro h1{color:#fff;font-size:28px;font-weight:800;margin-bottom:8px;letter-spacing:.5px}
 #intro .intro-loc{color:rgba(255,255,255,.5);font-size:13px;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:4px}
 #intro .intro-tag{color:rgba(255,255,255,.35);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:30px}
@@ -62,8 +62,8 @@ button{font-family:inherit;border:none;cursor:pointer}
 
 /* ═══ Header ═══ */
 #hdr{position:fixed;top:10px;left:12px;z-index:100;display:flex;align-items:center;gap:8px;animation:fadeIn .5s .3s both}
-#hdr .logo{width:32px;height:32px;border-radius:var(--rm);overflow:hidden;box-shadow:var(--sm);background:linear-gradient(135deg,var(--pri),var(--pri-d));display:flex;align-items:center;justify-content:center;font-size:15px}
-#hdr .logo img{width:100%;height:100%;object-fit:cover}
+#hdr .logo{width:36px;height:36px;border-radius:var(--rs);overflow:hidden;box-shadow:var(--sm);background:#fff;display:flex;align-items:center;justify-content:center;padding:2px}
+#hdr .logo img{width:100%;height:100%;object-fit:contain}
 #hdr .name{font-size:13px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5)}
 .hbtn{padding:5px 11px;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);border-radius:var(--rm);color:#fff;font-size:10px;font-weight:500;transition:background var(--t-f);display:flex;align-items:center;gap:4px}
 .hbtn:hover{background:rgba(255,255,255,.2)}
@@ -79,7 +79,7 @@ button{font-family:inherit;border:none;cursor:pointer}
 .d-body{padding:10px;overflow-y:auto;min-height:240px;transition:all var(--t-n);flex:1}
 
 /* Hero carousel */
-.hero-car{position:relative;width:100%;height:120px;border-radius:var(--rm);overflow:hidden;margin-bottom:8px;background:#111}
+.hero-car{position:relative;width:100%;height:160px;border-radius:var(--rm);overflow:hidden;margin-bottom:8px;background:#111}
 .hero-car img,.hero-car video{width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;opacity:0;transition:opacity .5s}
 .hero-car img.active,.hero-car video.active{opacity:1}
 .hero-car .hero-dots{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:2}
@@ -439,7 +439,10 @@ function init(){
   R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.0;R.outputColorSpace=THREE.SRGBColorSpace;
   S=new THREE.Scene();S.fog=new THREE.Fog(0x0f172a,80,250);
   C=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,.1,500);
-  Ctrl=new OrbitControls(C,cv);Ctrl.enableDamping=true;Ctrl.dampingFactor=.06;Ctrl.minDistance=3;Ctrl.maxDistance=180;Ctrl.maxPolarAngle=Math.PI/2-.02;
+  // Set initial camera position far away
+  C.position.set(100,80,100);
+  Ctrl=new OrbitControls(C,cv);Ctrl.enableDamping=true;Ctrl.dampingFactor=.06;Ctrl.minDistance=10;Ctrl.maxDistance=180;Ctrl.maxPolarAngle=Math.PI/2-.02;
+  Ctrl.target.set(0,15,0);
   addEventListener('resize',()=>{C.aspect=innerWidth/innerHeight;C.updateProjectionMatrix();R.setSize(innerWidth,innerHeight)});
 }
 
@@ -531,12 +534,19 @@ function flyTo(pos,look,dur=CFG.flyDur){
   });
 }
 
-function zoom(d){const dir=new THREE.Vector3();C.getWorldDirection(dir);const nv=C.position.clone().add(dir.multiplyScalar(d*CFG.zoomStep));const dist=nv.distanceTo(Ctrl.target);if(dist>=3&&dist<=180){
-  // Collision check
+function zoom(d){const dir=new THREE.Vector3();C.getWorldDirection(dir);const nv=C.position.clone().add(dir.multiplyScalar(d*CFG.zoomStep));const dist=nv.distanceTo(Ctrl.target);if(dist>=10&&dist<=180){
+  // Collision check using building bbox mesh or colliders to restrict zooming into building
   if(d>0&&colliders.length){const rc=new THREE.Raycaster(C.position.clone(),dir.normalize(),0,CFG.zoomStep);const h=rc.intersectObjects(colliders,true);if(h.length)return;}
   C.position.copy(nv);
 }}
-function resetView(){return flyTo(dCam.clone(),dTgt.clone())}
+function resetView(){
+  // Use the stored default camera position
+  if(dCam && dTgt){
+    return flyTo(dCam.clone(),dTgt.clone());
+  }
+  // Fallback to initial position
+  return flyTo(new THREE.Vector3(100,80,100),new THREE.Vector3(0,15,0));
+}
 
 const _pv=new THREE.Vector3();
 function project(pos){_pv.copy(pos).project(C);if(_pv.z>1||_pv.z<-1)return null;return{x:(_pv.x*.5+.5)*innerWidth,y:(-_pv.y*.5+.5)*innerHeight}}
@@ -549,7 +559,22 @@ function isOccluded(pos){
   const dist=dir.length();dir.normalize();
   _rc.set(C.position,dir);_rc.far=dist;
   const hits=_rc.intersectObjects(colliders,true);
-  return hits.length>0&&hits[0].distance<dist-.5;
+  if(!hits.length)return false;
+  
+  // Check if hit is significantly closer than target (not just at the target)
+  const hitDist=hits[0].distance;
+  const margin=5; // Allow margin for hotspots on the building surface
+  
+  // If hotspot is above the building (high Y), check if ray hits the side before reaching it
+  if(pos.y>40){
+    // Get the hit point
+    const hitPt=new THREE.Vector3();
+    _rc.ray.at(hitDist,hitPt);
+    // If hit point is much lower than hotspot, the hotspot should be visible (on roof)
+    if(pos.y-hitPt.y>10)return false;
+  }
+  
+  return hitDist<dist-margin;
 }
 
 function render(){Ctrl.update();R.render(S,C);}
@@ -559,6 +584,13 @@ return{init,configure,setEnv,setFallbackBg,flyTo,zoom,resetView,project,isOcclud
 // ═══ MODEL + AUTO-TAG ═══
 const Mdl=(()=>{
 const map=new Map();const hsMap=new Map();let buildingBBox=null;
+
+// Levenshtein distance for fuzzy string matching
+function levenshtein(a,b){
+  const s=[];for(let i=0;i<=a.length;i++)s[i]=[i];for(let j=0;j<=b.length;j++)s[0][j]=j;
+  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)s[i][j]=b[i-1]===a[j-1]?s[i-1][j-1]:Math.min(s[i-1][j]+1,s[i][j-1]+1,s[i-1][j-1]+1);
+  return s[a.length][b.length];
+}
 
 function load(gltf){
   const root=gltf.scene;const t=TD.modelTransform||{};
@@ -576,10 +608,11 @@ function load(gltf){
     const gName=child.geometry?.name?.trim()||'';
 
     // Check for collision/building bbox marker
-    if(norm(nName).includes('collision')||norm(nName).includes('buildingbbox')||norm(nName).includes('building_bounds')||
-       norm(gName).includes('collision')||norm(gName).includes('buildingbbox')){
+    if(norm(nName).includes('collision')||norm(nName).includes('buildingbbox')||norm(nName).includes('building_bounds')||norm(nName).includes('building_bbox')||
+       norm(gName).includes('collision')||norm(gName).includes('buildingbbox')||norm(gName).includes('building_bounds')||norm(gName).includes('building_bbox')){
       child.visible=false;
       child.material=new THREE.MeshBasicMaterial({visible:false});
+      child.userData={isBuildingBBox:true};
       E.addCollider(child);
       buildingBBox=new THREE.Box3().setFromObject(child);
       return;
@@ -597,20 +630,53 @@ function load(gltf){
       matchedHS=allHS.find(h=>{
         const normHLabel=norm(h.label);
         const normHId=norm(h.id||'');
-        // Exact match
+        
+        // Exact match (normalized)
         if(normN===normHLabel||normG===normHLabel||normN===normHId||normG===normHId)return true;
-        // Partial match: check if hotspot label is contained in mesh name (handles "Green_Terrace_01", "GreenTerraceMesh", etc.)
+        
+        // Partial match: check if hotspot label is contained in mesh name
         if(normHLabel&&normHLabel.length>3&&(normN.includes(normHLabel)||normG.includes(normHLabel)))return true;
-        // Also check individual words (handles "Green Terrace" matching "green_terrace")
+        
+        // Split into words and check if all words match (handles "Green Terrace" vs "green_terrace")
         const labelWords=normHLabel.split(/[\s_\-]+/).filter(w=>w.length>2);
+        const meshNameWords=normN.split(/[\s_\-]+/).filter(w=>w.length>2);
+        const gNameWords=normG.split(/[\s_\-]+/).filter(w=>w.length>2);
+        const allMeshWords=[...meshNameWords,...gNameWords];
+        
         if(labelWords.length>1){
-          const allWordsMatch=labelWords.every(w=>normN.includes(w)||normG.includes(w));
+          // Check if all label words are found in mesh name words (with fuzzy matching)
+          const allWordsMatch=labelWords.every(lw=>allMeshWords.some(mw=>{
+            // Exact or contains
+            if(mw.includes(lw)||lw.includes(mw))return true;
+            // Fuzzy: allow 1 character difference for longer words
+            if(lw.length>=5&&mw.length>=5){
+              const dist=levenshtein(lw,mw);
+              if(dist<=2)return true;
+            }
+            return false;
+          }));
           if(allWordsMatch)return true;
         }
+        
+        // Check individual word containment with fuzzy matching
+        for(const labelWord of labelWords){
+          if(labelWord.length<3)continue;
+          for(const meshWord of allMeshWords){
+            if(meshWord.length<3)continue;
+            // Exact match or contains
+            if(meshWord===labelWord||meshWord.includes(labelWord)||labelWord.includes(meshWord))return true;
+            // Fuzzy: allow 1-2 character difference for longer words
+            if(labelWord.length>=5&&meshWord.length>=5){
+              const dist=levenshtein(labelWord,meshWord);
+              if(dist<=2)return true;
+            }
+          }
+        }
+        
         return false;
       });
     }
-    
+
     if(isHotspotMesh||matchedHS){
       child.geometry.computeBoundingBox();
       const center=new THREE.Vector3();
@@ -653,47 +719,24 @@ function load(gltf){
     const colMesh=new THREE.Mesh(new THREE.BoxGeometry(size.x+2,size.y+2,size.z+2),new THREE.MeshBasicMaterial({visible:false}));
     colMesh.position.copy(center);E.scene().add(colMesh);E.addCollider(colMesh);
   }
-  
-  // Fallback: use ALL meshes in the model to calculate bounding box
-  if(!buildingBBox){
-    buildingBBox=new THREE.Box3();
-    root.traverse(child=>{
-      if(child.isMesh){
-        const b=new THREE.Box3().setFromObject(child);
-        buildingBBox.union(b);
-      }
-    });
-    // Create invisible collision box
-    if(buildingBBox){
-      const size=buildingBBox.getSize(new THREE.Vector3());
-      const center=buildingBBox.getCenter(new THREE.Vector3());
-      const colMesh=new THREE.Mesh(new THREE.BoxGeometry(size.x+2,size.y+2,size.z+2),new THREE.MeshBasicMaterial({visible:false}));
-      colMesh.position.copy(center);E.scene().add(colMesh);E.addCollider(colMesh);
-      console.log('📦 Building bbox (fallback): center=[',center.x.toFixed(1),',',center.y.toFixed(1),',',center.z.toFixed(1),'] size=[',size.x.toFixed(1),',',size.y.toFixed(1),',',size.z.toFixed(1),']');
-    }
-  }
 
-  // Set camera position after model loads
+  // Set camera position after model loads using building_bbox mesh
   if(buildingBBox&&!E.isFlying()){
     const center=buildingBBox.getCenter(new THREE.Vector3());
     const size=buildingBBox.getSize(new THREE.Vector3());
     const maxDim=Math.max(size.x,size.y,size.z);
-    
-    console.log('📦 Building bbox:',center,'size:',size,'maxDim:',maxDim);
 
     if(dCam){
-      // High-angle corner view matching defaultcamera.png
-      // Camera positioned to show two faces of building from above
-      const dist=maxDim*0.9;  // Closer distance for detailed view
-      const camHeight=size.y*0.7;  // High angle - camera at 70% of building height above center
-      const camPos=new THREE.Vector3(center.x+dist,center.y+camHeight,center.z+dist);
-      // Target slightly below center for downward viewing angle
-      const target=new THREE.Vector3(center.x,center.y+size.y*0.15,center.z);
+      // Use defaultCamera as absolute offsets from building center (in world units)
+      // dCam = [xOffset, yOffset, zOffset] in absolute world units
+      const camX=center.x+dCam.x;
+      const camY=center.y+dCam.y;
+      const camZ=center.z+dCam.z;
+      const camPos=new THREE.Vector3(camX,camY,camZ);
       E.camera().position.copy(camPos);
-      E.controls().target.copy(target);
+      E.controls().target.copy(center);
       dCam=camPos.clone();
-      dTgt=target.clone();
-      console.log('📷 Camera set to:',camPos,'target:',target);
+      dTgt=center.clone();
     }else{
       // Compute a good viewing distance based on building bbox
       const dist=maxDim*1.8;
@@ -702,10 +745,13 @@ function load(gltf){
       E.controls().target.copy(center);
       dCam=camPos.clone();
       dTgt=center.clone();
-      console.log('📷 Camera set (auto):',camPos,'target:',center);
     }
-  }else{
-    console.warn('⚠️ No building bbox or flying - camera not set');
+  } else {
+    // Fallback: set a default camera position even without bbox
+    if(dCam && !E.isFlying()){
+      E.camera().position.copy(dCam);
+      E.controls().target.set(0, 15, 0);
+    }
   }
 
   return root;
@@ -878,9 +924,13 @@ function clear(){
   items.forEach(({el})=>el.classList.remove('sel'));
   // Restore all hotspot meshes to hidden state
   Mdl.hsMap().forEach((v,k)=>{
-    if(v.mesh&&v.mesh.userData.origMaterial){
-      v.mesh.material=v.userData.origMaterial;
+    if(v.mesh){
+      // Hide the mesh
       v.mesh.visible=false;
+      // Reset material if we have stored original
+      if(v.mesh.userData.origMaterial){
+        v.mesh.material=v.userData.origMaterial;
+      }
     }
   });
 }
@@ -1040,7 +1090,10 @@ function wireAll(){
   document.getElementById('t-fs').onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(e){}};
   document.getElementById('lb-x').onclick=Gal.close;document.getElementById('lb-p').onclick=()=>Gal.nav(-1);document.getElementById('lb-nx').onclick=()=>Gal.nav(1);document.getElementById('lb').onclick=e=>{if(e.target.id==='lb')Gal.close()};
   document.getElementById('lb-zin').onclick=Gal.lbZoomIn;document.getElementById('lb-zout').onclick=Gal.lbZoomOut;document.getElementById('lb-dl').onclick=Gal.download;
-  document.getElementById('open-pd').onclick=()=>document.getElementById('pd').classList.add('open');document.getElementById('pd-cl').onclick=()=>document.getElementById('pd').classList.remove('open');document.getElementById('pd').onclick=e=>{if(e.target.id==='pd')document.getElementById('pd').classList.remove('open')};
+  
+  // Project details modal
+  document.getElementById('open-pd').onclick=()=>document.getElementById('pd').classList.add('open');
+  document.getElementById('pd-cl').onclick=()=>document.getElementById('pd').classList.remove('open');document.getElementById('pd').onclick=e=>{if(e.target.id==='pd')document.getElementById('pd').classList.remove('open')};
   document.getElementById('open-contact').onclick=()=>Contact.open();
   document.getElementById('fp-cl').onclick=FP.close;document.getElementById('fp').onclick=e=>{if(e.target.id==='fp')FP.close()};
   document.getElementById('pano-x').onclick=Pano.close;document.getElementById('pano-zin').onclick=Pano.zoomIn;document.getElementById('pano-zout').onclick=Pano.zoomOut;document.getElementById('pano-rst').onclick=Pano.reset;
@@ -1090,7 +1143,6 @@ function populateProject(){
   const heroEl=document.getElementById('d-hero');const heroMedia=[];
   if(TD.media?.heroImage)heroMedia.push({url:TD.media.heroImage,type:'image'});
   if(TD.media?.heroVideo)heroMedia.push({url:TD.media.heroVideo,type:'video'});
-  (TD.media?.amenityImages||[]).forEach(u=>heroMedia.push({url:u,type:'image'}));
   if(heroMedia.length){
     let hIdx=0;
     heroEl.innerHTML=heroMedia.map((m,i)=>m.type==='video'?`<video src="${m.url}" muted autoplay loop playsinline class="${i===0?'active':''}"></video>`:`<img src="${m.url}" class="${i===0?'active':''}">`).join('')+(heroMedia.length>1?`<button class="hero-nav p" id="hero-p">◀</button><button class="hero-nav n" id="hero-n">▶</button><div class="hero-dots">${heroMedia.map((_,i)=>`<button class="hdot${i===0?' on':''}" data-i="${i}"></button>`).join('')}</div>`:'');
@@ -1214,10 +1266,10 @@ function showHS(h){
   if(h.images)h.images.forEach(img=>{const url=typeof img==='string'?img:img.url;if(url)media.push({url,type:'image',label:h.label})});
   if(h.videos)h.videos.forEach(v=>{const url=typeof v==='string'?v:v.url;if(url)media.push({url,type:'video',label:h.label})});
 
-  // Carousel for hotspot images
+  // Carousel for hotspot images/videos
   let car='';
   if(media.length){
-    const f=media[0];const tag=f.type==='video'?`<video src="${f.url}" muted autoplay loop playsinline></video>`:`<img src="${f.url}">`;
+    const f=media[0];const tag=f.type==='video'?`<video src="${f.url}" muted autoplay loop playsinline class="active"></video>`:`<img src="${f.url}" class="active">`;
     car=`<div class="u-carousel" id="hs-car">${tag}${media.length>1?`<button class="cb p" id="hs-cp">◀</button><button class="cb n" id="hs-cn">▶</button><div class="cdots">${media.map((_,i)=>`<button class="cdot${i===0?' on':''}" data-i="${i}"></button>`).join('')}</div>`:''}
     <div class="mc">${media.length>1?`1/${media.length}`:(f.type==='video'?'🎬':'')}</div></div>`;
   }
@@ -1231,7 +1283,16 @@ function showHS(h){
   // Wire carousel
   if(media.length>1){
     let ci=0;
-    const upC=()=>{const car2=document.getElementById('hs-car');if(!car2)return;const m=media[ci];const old=car2.querySelector('img,video');let ne;if(m.type==='video'){ne=document.createElement('video');ne.src=m.url;ne.muted=true;ne.autoplay=true;ne.loop=true;ne.playsInline=true;}else{ne=document.createElement('img');ne.src=m.url;}if(old)old.replaceWith(ne);car2.querySelector('.mc').textContent=`${ci+1}/${media.length}`;car2.querySelectorAll('.cdot').forEach((dot,i)=>dot.classList.toggle('on',i===ci));};
+    const upC=()=>{
+      const car2=document.getElementById('hs-car');
+      if(!car2)return;
+      const m=media[ci];
+      const oldTag=car2.querySelector('img,video');
+      let ne;if(m.type==='video'){ne=document.createElement('video');ne.src=m.url;ne.muted=true;ne.autoplay=true;ne.loop=true;ne.playsInline=true;ne.className='active';}else{ne=document.createElement('img');ne.src=m.url;ne.className='active';}
+      if(oldTag)oldTag.replaceWith(ne);
+      car2.querySelector('.mc').textContent=`${ci+1}/${media.length}`;
+      car2.querySelectorAll('.cdot').forEach((dot,i)=>dot.classList.toggle('on',i===ci));
+    };
     d.querySelector('#hs-cp')?.addEventListener('click',()=>{ci=(ci-1+media.length)%media.length;upC()});
     d.querySelector('#hs-cn')?.addEventListener('click',()=>{ci=(ci+1)%media.length;upC()});
     d.querySelectorAll('.cdot').forEach(dot=>dot.addEventListener('click',()=>{ci=+dot.dataset.i;upC()}));
