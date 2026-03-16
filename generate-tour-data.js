@@ -71,9 +71,10 @@ const PROJECT_CONFIG = {
   floorRange: { start: 3, end: 17 },
   coordinates: { lat: 9.036278, lng: 38.752639 },
 
-  // Camera defaults — adjust after testing with your model
-  defaultCamera: [25, 35, 50],
-  defaultTarget: [0, 15, 0],
+  // Camera defaults — high-angle corner view matching defaultcamera.png
+  // Values are ratios: camera offset = building_size * ratio
+  defaultCamera: [1, 1, 1],  // Corner view (equal X/Z offset), Y calculated from building height
+  defaultTarget: [0, 0.15, 0], // Target 15% up from building base for downward angle
 
   // Model transform — adjust to fit your GLB
   modelTransform: {
@@ -578,68 +579,60 @@ function generateUnits() {
 }
 
 // ═══════════════════════════════════════════════
-// HOTSPOT DEFINITIONS
+// HOTSPOT DEFINITIONS — PRESERVE EXISTING
 // ═══════════════════════════════════════════════
 
-const HOTSPOTS = [
+// Try to load existing tour-data.json to preserve hotspots and other custom data
+let existingData = null;
+const existingDataPath = path.join(baseDir, 'tour-data.json');
+if (fs.existsSync(existingDataPath)) {
+  try {
+    existingData = JSON.parse(fs.readFileSync(existingDataPath, 'utf8'));
+    console.log('✓ Found existing tour-data.json — preserving hotspots and custom data');
+  } catch (e) {
+    console.log('⚠ Could not parse existing tour-data.json — using defaults');
+  }
+}
+
+// Default hotspots (only used if no existing data)
+const DEFAULT_HOTSPOTS = [
   {
     id: 'h1',
-    label: 'Swimming Pool',
-    description: 'Olympic-size pool with panoramic views of the city skyline. Open to all residents with dedicated changing rooms and sun deck.',
-    position: [18, 0.8, -4],
-    navTarget: [18, 3, 5],
-    color: '#3b82f6',
-    icon: '🏊',
-    type: 'amenity'
+    label: 'EV Charging Station',
+    description: 'Eco-friendly electric vehicle charging stations available for residents. Conveniently located with fast-charging capability for all EV models.',
+    position: [12, -2, 8],
+    navTarget: [15, 0, 12],
+    color: '#10b981',
+    icon: '🔌',
+    type: 'amenity',
+    images: ['project/amenities/ev-charging-station.jpg'],
+    videos: []
   },
   {
     id: 'h2',
-    label: 'Gym & Wellness',
-    description: 'State-of-the-art fitness center with premium cardio and strength equipment, dedicated yoga studio, and wellness area.',
-    position: [-8, 0.8, 3],
-    navTarget: null,
-    color: '#10b981',
-    icon: '💪',
-    type: 'amenity'
-  },
-  {
-    id: 'h3',
-    label: 'Main Lobby',
-    description: 'Grand double-height entrance lobby with 24/7 concierge service, premium finishes, and secure visitor management.',
-    position: [0, 0.8, 6],
-    navTarget: [0, 2, 12],
-    color: '#f59e0b',
-    icon: '🏛️',
-    type: 'amenity'
-  },
-  {
-    id: 'h4',
     label: 'Green Terrace',
     description: 'Landscaped rooftop terrace with seating areas, walking paths, and city views. A peaceful retreat above the city.',
     position: [0, 62, 0],
     navTarget: [5, 65, 10],
     color: '#22c55e',
-    icon: '🌳',
-    type: 'amenity'
-  },
-  {
-    id: 'h5',
-    label: 'Parking Garage',
-    description: 'Private underground parking with designated spots for each unit, EV charging stations, and secure access control.',
-    position: [5, -2, 3],
-    navTarget: [10, 1, 8],
-    color: '#6366f1',
-    icon: '🅿️',
-    type: 'amenity'
+    icon: '🌱',
+    type: 'amenity',
+    images: ['project/amenities/green-terrace.jpg'],
+    videos: []
   }
 ];
 
-// Resolve hotspot media
-HOTSPOTS.forEach(h => {
-  const media = resolveHotspotMedia(h.id);
-  h.images = media.images;
-  h.videos = media.videos;
-});
+// Use existing hotspots if available, otherwise use defaults
+const HOTSPOTS = existingData?.hotspots || DEFAULT_HOTSPOTS;
+
+// Resolve hotspot media for default hotspots only (existing ones already have media)
+if (!existingData) {
+  HOTSPOTS.forEach(h => {
+    const media = resolveHotspotMedia(h.id);
+    if (media.images.length > 0) h.images = media.images;
+    if (media.videos.length > 0) h.videos = media.videos;
+  });
+}
 
 // ═══════════════════════════════════════════════
 // BUILD UNIT TYPES WITH RESOLVED ASSETS
@@ -669,7 +662,7 @@ const hdriFile = files.hdr.find(isHDR);
 const buildingModel = files.model.find(isModel);
 
 // ═══════════════════════════════════════════════
-// ASSEMBLE FINAL JSON
+// ASSEMBLE FINAL JSON — PRESERVE EXISTING DATA
 // ═══════════════════════════════════════════════
 
 const tourData = {
@@ -715,8 +708,9 @@ const tourData = {
     buildingModel: buildingModel ? `model/${buildingModel}` : null
   },
 
-  // ── Nearby & Facilities ──
-  nearbyAttractions: [
+  // ── Preserve existing data fields ──
+  // These are preserved from existing tour-data.json if it exists
+  nearbyAttractions: existingData?.nearbyAttractions || [
     { name: 'Bole International Airport', distance: '26min (8.8km)', type: 'Airport', icon: '✈️' },
     { name: 'Lycee G/Mariam International School', distance: '3min walk (260m)', type: 'School', icon: '🏫' },
     { name: 'Hyatt Regency', distance: '13min (3.2km)', type: 'Hotel', icon: '🏨' },
@@ -731,7 +725,7 @@ const tourData = {
     { name: 'Addis Abeba Golf Club', distance: '22min (7.1km)', type: 'Recreation', icon: '⛳' }
   ],
 
-  publicFacilities: [
+  publicFacilities: existingData?.publicFacilities || [
     { name: 'International Hospitals', category: 'Healthcare', icon: '🏥' },
     { name: 'Universities, Colleges & Schools', category: 'Education', icon: '🎓' },
     { name: 'Utilities & Services (Maintenance & Gas stations)', category: 'Services', icon: '⛽' },
@@ -741,7 +735,7 @@ const tourData = {
     { name: 'Religious Places', category: 'Religious', icon: '⛪' }
   ],
 
-  amenities: [
+  amenities: existingData?.amenities || [
     { name: 'Elevator', icon: '🛗', category: 'Building' },
     { name: 'WiFi', icon: '📶', category: 'Utilities' },
     { name: 'Central Air', icon: '❄️', category: 'Utilities' },
@@ -757,7 +751,7 @@ const tourData = {
     { name: 'Green Terrace', icon: '🌱', category: 'Outdoor' }
   ],
 
-  features: [
+  features: existingData?.features || [
     { icon: '🏊', text: 'Swimming Pool' },
     { icon: '💪', text: 'Fitness Center' },
     { icon: '🌳', text: 'Green Terrace' },

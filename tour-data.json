@@ -20,13 +20,13 @@
     "lng": 38.752639
   },
   "defaultCamera": [
-    25,
-    35,
-    50
+    1,
+    1,
+    1
   ],
   "defaultTarget": [
     0,
-    15,
+    0.15,
     0
   ],
   "modelFile": "model/building.glb",
@@ -54,7 +54,7 @@
     "Sold": "#ef4444"
   },
   "media": {
-    "developerLogo": "project/developers-logo.jpg",
+    "developerLogo": null,
     "heroImage": "project/hero-image-video/seken.png",
     "heroVideo": "project/hero-image-video/mainsowreel.mp4",
     "projectFloorPlan": "project/floor-plans/seken-Floorplan.jpg",
@@ -89,42 +89,6 @@
       "icon": "🏨"
     },
     {
-      "name": "Sheraton Addis Hotel",
-      "distance": "6min (2.1km)",
-      "type": "Hotel",
-      "icon": "🏨"
-    },
-    {
-      "name": "Hilton Hotel",
-      "distance": "5min (2.2km)",
-      "type": "Hotel",
-      "icon": "🏨"
-    },
-    {
-      "name": "Radisson Blu Hotel",
-      "distance": "7min (2.1km)",
-      "type": "Hotel",
-      "icon": "🏨"
-    },
-    {
-      "name": "Intercontinental Hotel",
-      "distance": "8min (2.5km)",
-      "type": "Hotel",
-      "icon": "🏨"
-    },
-    {
-      "name": "Eliana Hotel",
-      "distance": "4min (800m)",
-      "type": "Hotel",
-      "icon": "🏨"
-    },
-    {
-      "name": "Abrehot Library",
-      "distance": "6min (1.70km)",
-      "type": "Library",
-      "icon": "📚"
-    },
-    {
       "name": "National Museum of Ethiopia",
       "distance": "9min (2.7km)",
       "type": "Museum",
@@ -135,12 +99,6 @@
       "distance": "4min (1.4km)",
       "type": "Park",
       "icon": "🌳"
-    },
-    {
-      "name": "Addis Abeba Golf Club",
-      "distance": "22min (7.1km)",
-      "type": "Recreation",
-      "icon": "⛳"
     }
   ],
   "publicFacilities": [
@@ -155,11 +113,6 @@
       "icon": "🎓"
     },
     {
-      "name": "Utilities & Services (Maintenance & Gas stations)",
-      "category": "Services",
-      "icon": "⛽"
-    },
-    {
       "name": "Hotels & Cultural Restaurants",
       "category": "Hospitality",
       "icon": "🍽️"
@@ -168,64 +121,9 @@
       "name": "Sport Facilities, Malls & Commercial",
       "category": "Commercial",
       "icon": "🏬"
-    },
-    {
-      "name": "Parks, Zoo and Amusement Park",
-      "category": "Recreation",
-      "icon": "🎡"
-    },
-    {
-      "name": "Religious Places",
-      "category": "Religious",
-      "icon": "⛪"
     }
   ],
   "amenities": [
-    {
-      "name": "Elevator",
-      "icon": "🛗",
-      "category": "Building"
-    },
-    {
-      "name": "WiFi",
-      "icon": "📶",
-      "category": "Utilities"
-    },
-    {
-      "name": "Central Air",
-      "icon": "❄️",
-      "category": "Utilities"
-    },
-    {
-      "name": "Electricity",
-      "icon": "⚡",
-      "category": "Utilities"
-    },
-    {
-      "name": "Equipped Kitchen",
-      "icon": "🍳",
-      "category": "Interior"
-    },
-    {
-      "name": "Fireplace",
-      "icon": "🔥",
-      "category": "Interior"
-    },
-    {
-      "name": "Back Yard",
-      "icon": "🌿",
-      "category": "Outdoor"
-    },
-    {
-      "name": "Garage Attached",
-      "icon": "🚗",
-      "category": "Outdoor"
-    },
-    {
-      "name": "Water Supply",
-      "icon": "💧",
-      "category": "Outdoor"
-    },
     {
       "name": "CCTV Surveillance",
       "icon": "📹",
@@ -249,28 +147,8 @@
   ],
   "features": [
     {
-      "icon": "🏊",
-      "text": "Swimming Pool"
-    },
-    {
-      "icon": "💪",
-      "text": "Fitness Center"
-    },
-    {
-      "icon": "🌳",
-      "text": "Green Terrace"
-    },
-    {
-      "icon": "🅿️",
-      "text": "Private Parking"
-    },
-    {
-      "icon": "🔒",
-      "text": "24/7 Security"
-    },
-    {
-      "icon": "🛗",
-      "text": "High-Speed Elevator"
+      "icon": "",
+      "text": "CCTV Surveillance"
     },
     {
       "icon": "🔌",
@@ -279,103 +157,55 @@
     {
       "icon": "🚰",
       "text": "Underground Water"
+    },
+    {
+      "icon": "🌱",
+      "text": "Green Terrace"
     }
   ],
   "hotspots": [
     {
       "id": "h1",
-      "label": "Swimming Pool",
-      "description": "Olympic-size pool with panoramic views of the city skyline. Open to all residents with dedicated changing rooms and sun deck.",
+      "label": "EV Charging Station",
+      "description": "Eco-friendly electric vehicle charging stations available for residents. Conveniently located with fast-charging capability for all EV models.",
       "position": [
-        18,
-        0.8,
-        -4
+        12,
+        -2,
+        8
       ],
       "navTarget": [
-        18,
-        3,
-        5
+        15,
+        0,
+        12
       ],
-      "color": "#3b82f6",
-      "icon": "🏊",
+      "color": "#10b981",
+      "icon": "🔌",
       "type": "amenity",
-      "images": [],
+      "images": [
+        "project/amenities/ev-charging-station.jpg"
+      ],
       "videos": []
     },
     {
       "id": "h2",
-      "label": "Gym & Wellness",
-      "description": "State-of-the-art fitness center with premium cardio and strength equipment, dedicated yoga studio, and wellness area.",
-      "position": [
-        -8,
-        0.8,
-        3
-      ],
-      "navTarget": null,
-      "color": "#10b981",
-      "icon": "💪",
-      "type": "amenity",
-      "images": [],
-      "videos": []
-    },
-    {
-      "id": "h3",
-      "label": "Main Lobby",
-      "description": "Grand double-height entrance lobby with 24/7 concierge service, premium finishes, and secure visitor management.",
-      "position": [
-        0,
-        0.8,
-        6
-      ],
-      "navTarget": [
-        0,
-        2,
-        12
-      ],
-      "color": "#f59e0b",
-      "icon": "🏛️",
-      "type": "amenity",
-      "images": [],
-      "videos": []
-    },
-    {
-      "id": "h4",
       "label": "Green Terrace",
       "description": "Landscaped rooftop terrace with seating areas, walking paths, and city views. A peaceful retreat above the city.",
       "position": [
         0,
-        62,
+        68,
         0
       ],
       "navTarget": [
-        5,
-        65,
-        10
+        0,
+        68,
+        0
       ],
       "color": "#22c55e",
-      "icon": "🌳",
+      "icon": "🌱",
       "type": "amenity",
-      "images": [],
-      "videos": []
-    },
-    {
-      "id": "h5",
-      "label": "Parking Garage",
-      "description": "Private underground parking with designated spots for each unit, EV charging stations, and secure access control.",
-      "position": [
-        5,
-        -2,
-        3
+      "images": [
+        "project/amenities/green-terrace.jpg"
       ],
-      "navTarget": [
-        10,
-        1,
-        8
-      ],
-      "color": "#6366f1",
-      "icon": "🅿️",
-      "type": "amenity",
-      "images": [],
       "videos": []
     }
   ],
