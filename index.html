@@ -37,36 +37,36 @@ button{font-family:inherit;border:none;cursor:pointer}
 /* ═══ Mobile Responsive Styles ═══ */
 @media (max-width: 768px) {
   /* Header - more compact on mobile */
-  #hdr{top:6px;left:8px;gap:5px}
+  #hdr{top:6px;left:8px;gap:5px;z-index:150}
   #hdr .hdr-row{gap:6px}
   #hdr .logo{width:40px;height:40px}
   #hdr .name{font-size:14px}
   .hbtn{padding:5px 9px;font-size:10px}
-  
+
   /* Detail panel - full width on mobile */
-  #detail{top:0;right:0;width:100%;max-width:none;max-height:60vh;border-radius:var(--rxl) var(--rxl) 0 0}
+  #detail{top:auto;bottom:0;right:0;width:100%;max-width:none;max-height:65vh;border-radius:var(--rxl) var(--rxl) 0 0;z-index:140}
   #detail .d-body{min-height:180px}
-  
+
   /* Search panel - full width on mobile */
-  #search{bottom:0;left:0;width:100%;max-width:none;border-radius:var(--rxl) var(--rxl) 0 0;transform:none!important}
+  #search{bottom:0;left:0;width:100%;max-width:none;border-radius:var(--rxl) var(--rxl) 0 0;transform:none!important;z-index:140}
   #search .s-body{max-height:200px}
-  
+
   /* Tools - reposition for thumb access */
-  #tools{left:8px;gap:4px}
+  #tools{left:8px;bottom:8px;top:auto;gap:4px;z-index:130}
   .tb{width:36px;height:36px;font-size:14px}
-  
+
   /* Gallery widget - more compact */
-  #gal{bottom:8px;right:8px;padding:5px 10px}
+  #gal{bottom:8px;right:8px;padding:5px 10px;z-index:120}
   .gth{width:32px;height:32px}
   .gmore{width:32px;height:32px;font-size:8px}
   .gtxt .t1{font-size:9px}
   .gtxt .t2{font-size:7.5px}
-  
+
   /* Hotspot markers - larger touch targets */
-  .hs-m{transform:scale(1.2)}
+  .hs-m{transform:scale(1.2);z-index:100}
   .hs-dome{width:36px;height:36px;font-size:15px}
   .hs-lbl{font-size:9.5px;padding:3px 8px}
-  
+
   /* Lightbox controls - reposition for mobile */
   #lb .lb-media{max-width:95vw;max-height:calc(70vh - 60px)}
   .lb-ctrl{width:38px;height:38px;font-size:14px}
@@ -75,50 +75,50 @@ button{font-family:inherit;border:none;cursor:pointer}
   .lb-nav.p{left:8px}.lb-nav.nx{right:8px}
   .lb-tools{bottom:16px;padding:6px 10px}
   .lb-tool{width:34px;height:34px;font-size:12px}
-  
+
   /* Project details modal - full screen on mobile */
-  #pd{padding:0}
+  #pd{padding:0;z-index:150}
   .pd-m{max-width:100%;max-height:100%;border-radius:0}
   .pd-h{padding:12px}
   .pd-b{padding:12px}
-  
+
   /* 3D Floor plan modal - full screen */
-  #fp{padding:0}
+  #fp{padding:0;z-index:150}
   .fp-m{max-width:100%;max-height:100%;border-radius:0}
   .fp-view{height:280px}
-  
+
   /* Panorama controls - larger touch targets */
   .pano-ctrl{width:40px;height:40px;font-size:14px}
-  
+
   /* Intro screen - responsive */
   #intro h1{font-size:22px}
   #intro .intro-logo{width:70px;height:70px}
   #intro .intro-stats{gap:12px}
   #intro .intro-stat b{font-size:18px}
   #intro .intro-enter{padding:12px 30px;font-size:14px}
-  
+
   /* Unit cards - optimized for mobile */
   .u-carousel{height:120px}
   .u-stats{grid-template-columns:repeat(2,1fr)}
   .u-actions{flex-direction:column}
   .u-btn{min-height:36px}
-  
+
   /* Hero carousel - responsive */
   .hero-car{height:140px}
-  
+
   /* Search filters - stack on mobile */
   .sr{flex-direction:column}
   .si{min-height:40px}
   .sb,.rb{min-height:40px}
-  
+
   /* Project details chips - wrap more */
   .pd-chip{font-size:9px;padding:4px 7px}
   .pd-am-grid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))}
   .pd-contact-grid{grid-template-columns:1fr 1fr}
-  
+
   /* Floor plan area breakdown - 2 columns on mobile */
   .u-ab-grid{grid-template-columns:repeat(2,1fr)}
-  
+
   /* Nearby attractions - single column on very small screens */
   @media (max-width: 400px) {
     .pd-nearby-grid{grid-template-columns:1fr}
@@ -1644,7 +1644,7 @@ return{init,expandDet,showUnit,showHS,resetDet,populateProject,populateIntro};
 
 // ═══ MOBILE GESTURES ═══
 const Gestures=(()=>{
-let touchStartX=0,touchStartY=0,touchLastDist=0,touchStartTime=0,doubleTapTimer=null,pinchStartDist=0,pinchActive=false,panStartX=0,panStartY=0,panActive=false;
+let touchStartX=0,touchStartY=0,touchLastDist=0,touchStartTime=0,doubleTapTimer=null,pinchStartDist=0,pinchActive=false,panStartX=0,panStartY=0,panActive=false,gestureBlocked=false;
 
 // Utility: get touch distance
 function getTouchDist(t1,t2){const dx=t1.clientX-t2.clientX,dy=t1.clientY-t2.clientY;return Math.sqrt(dx*dx+dy*dy);}
@@ -1654,19 +1654,23 @@ function getTouchCenter(t1,t2){return{x:(t1.clientX+t2.clientX)/2,y:(t1.clientY+
 
 function handleTouchStart(e){
   // Ignore if interacting with UI elements
-  if(e.target.closest('#detail,#search,#pd,#fp,#lb,#pano,#fp2d,.u-card,.hs-card,.pd-m,.fp-m'))return;
-  
+  if(e.target.closest('#detail,#search,#pd,#fp,#lb,#pano,#fp2d,.u-card,.hs-card,.pd-m,.fp-m,#hdr,#tools,#gal,#pwa-toast')){
+    gestureBlocked=true;
+    return;
+  }
+  gestureBlocked=false;
   touchStartTime=Date.now();
-  
+
   if(e.touches.length===1){
-    // Single touch - potential tap, pan, or swipe
+    // Single touch - potential tap or pan
     touchStartX=e.touches[0].clientX;
     touchStartY=e.touches[0].clientY;
     panStartX=touchStartX;
     panStartY=touchStartY;
     panActive=false;
+    pinchActive=false;
   }else if(e.touches.length===2){
-    // Two touches - pinch or rotate
+    // Two touches - pinch to zoom
     pinchStartDist=getTouchDist(e.touches[0],e.touches[1]);
     touchLastDist=pinchStartDist;
     pinchActive=true;
@@ -1677,38 +1681,39 @@ function handleTouchStart(e){
 }
 
 function handleTouchMove(e){
-  if(e.target.closest('#detail,#search,#pd,#fp,#lb,#pano,#fp2d,.u-card,.hs-card,.pd-m,.fp-m'))return;
-  e.preventDefault();
+  // Block if gesture started on UI element
+  if(gestureBlocked)return;
   
+  // Prevent default to avoid scrolling
+  e.preventDefault();
+
   if(e.touches.length===1&&!pinchActive){
     const dx=e.touches[0].clientX-panStartX;
     const dy=e.touches[0].clientY-panStartY;
     const dist=Math.sqrt(dx*dx+dy*dy);
-    
+
     // Start pan if moved more than threshold
-    if(dist>10){
+    if(dist>8){
       panActive=true;
-      // Update orbit controls for pan
-      if(E.controls().enabled){
-        const sensitivity=0.005;
-        E.controls().azimuthAngle-=dx*sensitivity;
-        E.controls().polarAngle-=dy*sensitivity;
-        E.controls().update();
-      }
+      // Update orbit controls for camera rotation
+      const sensitivity=0.004;
+      E.controls().azimuthAngle-=dx*sensitivity;
+      E.controls().polarAngle-=dy*sensitivity;
+      E.controls().update();
       panStartX=e.touches[0].clientX;
       panStartY=e.touches[0].clientY;
     }
   }else if(e.touches.length===2&&pinchActive){
     const newDist=getTouchDist(e.touches[0],e.touches[1]);
     const delta=touchLastDist-newDist;
-    
+
     // Pinch to zoom
     if(Math.abs(delta)>2){
       const zoomSensitivity=0.002;
       const currentPos=E.camera().position.clone();
       const target=E.controls().target.clone();
       const dir=new THREE.Vector3().subVectors(currentPos,target).normalize();
-      
+
       // Zoom in/out based on pinch direction
       const newDist2=target.distanceTo(currentPos)+delta*zoomSensitivity*target.distanceTo(currentPos);
       if(newDist2>10&&newDist2<200){
@@ -1722,23 +1727,23 @@ function handleTouchMove(e){
 }
 
 function handleTouchEnd(e){
-  if(e.target.closest('#detail,#search,#pd,#fp,#lb,#pano,#fp2d,.u-card,.hs-card,.pd-m,.fp-m'))return;
-  
+  if(gestureBlocked)return;
+
   const touchDuration=Date.now()-touchStartTime;
-  
+
   // Handle pinch end
   if(pinchActive){
     pinchActive=false;
     E.controls().enabled=true;
     return;
   }
-  
+
   // Handle tap vs swipe
   if(!panActive&&touchDuration<250){
     const dx=e.changedTouches[0].clientX-touchStartX;
     const dy=e.changedTouches[0].clientY-touchStartY;
     const tapDist=Math.sqrt(dx*dx+dy*dy);
-    
+
     // Tap detected
     if(tapDist<10){
       // Check for double tap
@@ -1754,12 +1759,12 @@ function handleTouchEnd(e){
         },300);
       }
     }
-    
+
     // Swipe detected
     if(tapDist>50){
       const angle=Math.atan2(dy,dx)*180/Math.PI;
       const absAngle=Math.abs(angle);
-      
+
       // Horizontal swipe
       if(absAngle<45||absAngle>135){
         if(angle>0){
@@ -1784,8 +1789,9 @@ function handleTouchEnd(e){
       }
     }
   }
-  
+
   panActive=false;
+  gestureBlocked=false;
 }
 
 // Handle keyboard shortcuts for mobile
@@ -1801,11 +1807,11 @@ function init(){
   canvas.addEventListener('touchmove',handleTouchMove,{passive:false});
   canvas.addEventListener('touchend',handleTouchEnd,{passive:false});
   canvas.addEventListener('touchcancel',handleTouchEnd,{passive:false});
-  
+
   // Keyboard support
   document.addEventListener('keydown',handleKey);
-  
-  // Prevent default touch behaviors
+
+  // Prevent default touch behaviors on canvas
   document.addEventListener('touchmove',(e)=>{
     if(e.target.closest('#c')){e.preventDefault();}
   },{passive:false});
