@@ -7,11 +7,6 @@ dist/
 www/
 build/
 
-# Capacitor
-android/
-ios/
-.capacitor/
-
 # Electron
 electron/dist/
 electron/build/
